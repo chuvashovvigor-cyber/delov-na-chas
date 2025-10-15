@@ -103,3 +103,14 @@ export async function POST(req: Request) {
     return new Response('error', { status: 200 });
   }
 }
+// уже есть export async function POST(...) { ... }
+
+// Добавь это в конец файла:
+export async function GET() {
+  // простой ответ для проверки Telegram при setWebhook
+  return new Response('ok', { status: 200 });
+}
+
+export async function HEAD() {
+  return new Response(null, { status: 200 });
+}
