@@ -20,29 +20,22 @@ export async function POST(req: Request) {
     const text: string | undefined = update.message?.text;
     const chatId = update.message?.chat?.id;
 
-    // /chatid — показать id текущего чата (удобно для проверки)
     if (text === '/chatid') {
       await send(chatId, `chat_id этой беседы: <code>${chatId}</code>`);
       return Response.json({ ok: true });
     }
 
-    // Геолокация от мастера
     if (update.message?.location) {
       const { latitude, longitude } = update.message.location;
       await send(ADMIN_CHAT_ID, `📍 Геопозиция:\nlat: ${latitude}\nlon: ${longitude}`);
       return Response.json({ ok: true });
     }
 
-    // /start
     if (text === '/start') {
-      await send(
-        chatId,
-        `Привет! Я бот «Делов-на-час».\n\nКоманды:\n/status — статусы заказа\n/location — отправить геопозицию\n/chatid — показать id чата`
-      );
+      await send(chatId, `Привет! Я бот «Делов-на-час».\n\nКоманды:\n/status — статусы заказа\n/location — отправить геопозицию\n/chatid — показать id чата`);
       return Response.json({ ok: true });
     }
 
-    // /status — кнопки статусов
     if (text === '/status') {
       await fetch(`${API}/sendMessage`, {
         method: 'POST',
@@ -63,7 +56,6 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    // /location — запрос кнопки отправки гео
     if (text === '/location') {
       await fetch(`${API}/sendMessage`, {
         method: 'POST',
@@ -81,7 +73,6 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    // Нажатия инлайн-кнопок статуса
     if (update.callback_query?.data?.startsWith('status:')) {
       const status = update.callback_query.data.split(':')[1];
       const who = update.callback_query.from?.first_name || 'мастер';
@@ -94,7 +85,6 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    // По умолчанию — пересылаем тексты в админ-чат
     if (text && chatId) {
       await send(ADMIN_CHAT_ID, `📩 Сообщение от ${chatId}:\n${text}`);
     }
@@ -102,15 +92,10 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   } catch (e) {
     console.error(e);
-    // 200, чтобы Telegram не спамил повторами
     return new Response('error', { status: 200 });
   }
 }
 
-// Важно для setWebhook: Telegram стучится GET/HEAD — отдаём 200
-export async function GET() {
-  return new Response('ok', { status: 200 });
-}
-export async function HEAD() {
-  return new Response(null, { status: 200 });
-}
+// Нужны для setWebhook
+export async function GET()  { return new Response('ok',  { status: 200 }); }
+export async function HEAD() { return new Response(null,  { status: 200 }); }
