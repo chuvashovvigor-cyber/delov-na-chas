@@ -7,13 +7,15 @@ type Preview = { name: string; url: string; type: string };
 type Point = { lat: number; lon: number; address?: string };
 
 export default function OrderPage() {
-  const [files, setFiles] = useState<Preview[]>([]);
-  const [point, setPoint] = useState<Point>({
-    lat: 54.513845,
-    lon: 36.261215,
-    address: '',
-  });
+  // город для подсказок и центрирования карты
+  const [city, setCity] = useState('Калуга');
 
+  // адрес/координаты из карты/поиска
+  const [point, setPoint] = useState<Point | null>(null);
+  const [address, setAddress] = useState('');
+
+  // предпросмотр прикреплённых файлов
+  const [files, setFiles] = useState<Preview[]>([]);
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const f = Array.from(e.target.files ?? []);
     const previews = f.map((file) => ({
@@ -23,12 +25,6 @@ export default function OrderPage() {
     }));
     setFiles(previews);
   }
-
-  // демо-мастера (потом сюда будем подставлять реальные координаты из Telegram)
-  const masters = [
-    { lat: 54.5205, lon: 36.27, name: 'Сергей' },
-    { lat: 54.50, lon: 36.24, name: 'Алексей' },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -50,13 +46,11 @@ export default function OrderPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* ФОРМА */}
+          {/* Левая колонка — форма */}
           <section>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-              Вызвать мастера
-            </h1>
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">Вызвать мастера</h1>
             <p className="mt-3 text-gray-600">
-              Укажите адрес (поиск с подсказками), прикрепите фото/видео и отправьте заявку.
+              Опишите задачу — заявка прилетит в наш Telegram-чат.
             </p>
 
             <form
@@ -67,21 +61,25 @@ export default function OrderPage() {
             >
               <input name="name" required placeholder="Ваше имя" className="rounded-xl border px-3 py-2" />
               <input name="phone" required placeholder="Телефон" className="rounded-xl border px-3 py-2" />
-              {/* адрес — синхронизируем с картой через hidden */}
+
+              {/* Адрес: подставляется из карты/поиска, но можно поправить вручную */}
               <input
                 name="address"
-                placeholder="Адрес (если пусто — возьмём с карты)"
+                placeholder="Адрес"
                 className="rounded-xl border px-3 py-2"
-                value={point.address || ''}
-                onChange={(e) => setPoint((p) => ({ ...p, address: e.target.value }))}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
               />
-              <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
 
-              {/* скрытые координаты */}
-              <input type="hidden" name="lat" value={point.lat} />
-              <input type="hidden" name="lon" value={point.lon} />
+              <textarea
+                name="details"
+                required
+                placeholder="Опишите задачу"
+                rows={4}
+                className="rounded-xl border px-3 py-2"
+              />
 
-              {/* Загрузка медиа + предпросмотр */}
+              {/* Прикрепление медиа + предпросмотр */}
               <div className="grid gap-2">
                 <input
                   id="media"
@@ -116,6 +114,10 @@ export default function OrderPage() {
                 )}
               </div>
 
+              {/* Скрытые поля с координатами из карты */}
+              <input type="hidden" name="lat" value={point?.lat ?? ''} />
+              <input type="hidden" name="lon" value={point?.lon ?? ''} />
+
               <button className="rounded-2xl bg-gray-900 text-white py-3 hover:bg-black">
                 Отправить заявку
               </button>
@@ -126,20 +128,25 @@ export default function OrderPage() {
             </form>
           </section>
 
-          {/* ПРАВАЯ КОЛОНКА: поиск + карта + мастера */}
+          {/* Правая колонка — город / поиск / карта */}
           <aside className="rounded-3xl border bg-white p-4 shadow-sm">
             <div className="text-sm font-semibold mb-3">Город</div>
-            <select className="w-full rounded-xl border px-3 py-2 bg-white">
-              <option value="kaluga">Калуга</option>
+            <select
+              className="w-full rounded-xl border px-3 py-2 bg-white"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            >
+              <option value="Калуга">Калуга</option>
+              {/* позже добавим другие города */}
             </select>
 
-            {/* Поиск + карта + кликабельная/перетаскиваемая метка.
-                onChange отдаёт lat/lon/address и мы держим это в state,
-                а в форму прокидываем через hidden поля */}
+            {/* Живой поиск + карта (компонент OrderClient) */}
             <OrderClient
-              value={point}
-              onChange={(p) => setPoint(p)}
-              masters={masters}
+              city={city}
+              onChange={(p) => {
+                setPoint({ lat: p.lat, lon: p.lon, address: p.address });
+                if (p.address) setAddress(p.address);
+              }}
             />
 
             <div className="mt-4 text-sm text-gray-600">
@@ -149,33 +156,5 @@ export default function OrderPage() {
         </div>
       </main>
     </div>
-  );
-}
-'use client';
-import { useState } from 'react';
-import OrderClient from './OrderClient';
-
-export default function OrderPage() {
-  const [city, setCity] = useState('Калуга');
-
-  // ...твой код формы...
-
-  return (
-    // ...
-    <aside className="rounded-3xl border bg-white p-4 shadow-sm">
-      <div className="text-sm font-semibold mb-3">Город</div>
-      <select
-        className="w-full rounded-xl border px-3 py-2 bg-white"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-      >
-        <option value="Калуга">Калуга</option>
-        {/* потом добавим ещё города */}
-      </select>
-
-      {/* ВАЖНО: передаём city в OrderClient */}
-      <OrderClient city={city} onChange={(p) => {/* сохраняй адрес/координаты в форму если нужно */}} />
-    </aside>
-    // ...
   );
 }
