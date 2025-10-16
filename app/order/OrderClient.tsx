@@ -1,236 +1,200 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import 'leaflet/dist/leaflet.css';
-
-type Point = { lat: number; lon: number; address?: string };
-type Suggest = { display_name: string; lat: string; lon: string };
+import { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 
 type Props = {
-  value?: Point;
-  onChange?: (p: Point) => void;
-  masters?: Array<{ lat: number; lon: number; name?: string }>;
-  city?: string; // <— НОВОЕ: город из селекта
+  city: string;
+  onChange: (p: { lat: number; lon: number; address?: string }) => void;
 };
 
-export default function OrderClient({
-  value,
-  onChange,
-  masters = [],
-  city = 'Калуга',
-}: Props) {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const instanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+// Ленивая загрузка react-leaflet только на клиенте
+const MapContainer = dynamic(
+  async () => (await import('react-leaflet')).MapContainer,
+  { ssr: false }
+);
+const TileLayer = dynamic(async () => (await import('react-leaflet')).TileLayer, { ssr: false });
+const Marker = dynamic(async () => (await import('react-leaflet')).Marker, { ssr: false });
+const useMapEvents = (await import('react-leaflet')).useMapEvents; // типы, не ломает SSR
+
+export default function OrderClient({ city, onChange }: Props) {
+  // Центр для Калуги
+  const cityCenter = useMemo(() => {
+    if (city === 'Калуга') return { lat: 54.513845, lon: 36.261215, zoom: 14 };
+    return { lat: 54.513845, lon: 36.261215, zoom: 14 };
+  }, [city]);
 
   const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<Array<{ label: string; lat: number; lon: number }>>(
+    []
+  );
   const [loading, setLoading] = useState(false);
-  const [suggests, setSuggests] = useState<Suggest[]>([]);
-  const [active, setActive] = useState(0); // индекс подсветки в списке
+  const [marker, setMarker] = useState<{ lat: number; lon: number } | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<string>('');
 
-  // ====== ТАЙЛЫ (современные, цветные) ======
-  const TILE = {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    maxZoom: 20,
-  };
+  const boxRef = useRef<HTMLDivElement | null>(null);
 
-  // чёрная метка (divIcon)
-  const getUserIcon = (L: any) =>
-    L.divIcon({
-      className: '',
-      html:
-        '<div style="width:18px;height:18px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.25);transform:translate(-50%,-50%)"></div>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
-
-  // мастер (машинка-эмодзи)
-  const getMasterIcon = (L: any) =>
-    L.divIcon({
-      className: 'master-icon',
-      html:
-        '<div style="font-size:22px;line-height:22px;transform:translate(-50%,-50%)">🚗😺</div>',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
-    });
-
-  // инициализация карты
+  // Поиск по Nominatim (OpenStreetMap) — живые подсказки
   useEffect(() => {
-    let map: any;
-    (async () => {
-      // @ts-expect-error no types
-      const L = await import('leaflet');
-      if (!mapRef.current) return;
-
-      const start: [number, number] = value
-        ? [value.lat, value.lon]
-        : [54.513845, 36.261215]; // Калуга
-
-      map = L.map(mapRef.current, { zoomControl: true }).setView(start, 13);
-      L.tileLayer(TILE.url, { attribution: TILE.attribution, maxZoom: TILE.maxZoom }).addTo(map);
-
-      markerRef.current = L.marker(start, {
-        draggable: true,
-        icon: getUserIcon(L),
-      })
-        .addTo(map)
-        .bindPopup('Ваш адрес');
-
-      // клик по карте
-      map.on('click', async (e: any) => {
-        await placePoint(e.latlng.lat, e.latlng.lng, true);
-      });
-
-      // перетаскивание
-      markerRef.current.on('dragend', async () => {
-        const { lat, lng } = markerRef.current.getLatLng();
-        await placePoint(lat, lng, true);
-      });
-
-      // мастера
-      masters.forEach((m) =>
-        L.marker([m.lat, m.lon], { icon: getMasterIcon(L) })
-          .addTo(map)
-          .bindPopup(m.name || 'Мастер')
-      );
-
-      instanceRef.current = { map, L };
-    })();
-
-    return () => {
-      try {
-        instanceRef.current?.map?.remove?.();
-      } catch {}
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // когда value меняется извне — двигаем метку
-  useEffect(() => {
-    if (!value || !instanceRef.current || !markerRef.current) return;
-    markerRef.current.setLatLng([value.lat, value.lon]);
-    instanceRef.current.map.panTo([value.lat, value.lon]);
-  }, [value]);
-
-  // ====== ЖИВОЙ ПОИСК (с дебаунсом) ======
-  useEffect(() => {
+    let cancelled = false;
     if (!query.trim()) {
-      setSuggests([]);
+      setSuggestions([]);
       return;
     }
-    const t = setTimeout(async () => {
-      setLoading(true);
+    const handler = setTimeout(async () => {
       try {
-        // сужаем поиск к городу + RU, добавляем детали адреса
-        const q = `${query}, ${city}`;
-        const r = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=7&addressdetails=1&accept-language=ru&countrycodes=ru&q=${encodeURIComponent(
-            q
-          )}`,
-          { headers: { Accept: 'application/json' } }
-        );
-        const data: Suggest[] = await r.json();
-        setSuggests(data);
-        setActive(0);
+        setLoading(true);
+        const url = new URL('https://nominatim.openstreetmap.org/search');
+        url.searchParams.set('q', `${city} ${query}`);
+        url.searchParams.set('format', 'json');
+        url.searchParams.set('addressdetails', '1');
+        url.searchParams.set('limit', '8');
+        const res = await fetch(url.toString(), {
+          headers: { 'Accept-Language': 'ru' },
+        });
+        const data: any[] = await res.json();
+        if (cancelled) return;
+        const list = data.map((it) => ({
+          label: it.display_name as string,
+          lat: Number(it.lat),
+          lon: Number(it.lon),
+        }));
+        setSuggestions(list);
       } catch {
-        setSuggests([]);
+        // ignore
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    }, 300);
-    return () => clearTimeout(t);
+    }, 250); // debounce
+    return () => {
+      cancelled = true;
+      clearTimeout(handler);
+    };
   }, [query, city]);
 
-  // выбрать подсказку
-  async function pick(s: Suggest) {
-    const lat = parseFloat(s.lat);
-    const lon = parseFloat(s.lon);
-    await placePoint(lat, lon, false, s.display_name);
-    setQuery(s.display_name);
-    setSuggests([]);
+  // Выбор подсказки
+  function chooseItem(item: { label: string; lat: number; lon: number }) {
+    setSelectedLabel(item.label);
+    setQuery(item.label);
+    setSuggestions([]);
+    const p = { lat: item.lat, lon: item.lon };
+    setMarker(p);
+    onChange({ ...p, address: item.label });
   }
 
-  // поставить точку + (опционально) реверс-геокод
-  async function placePoint(lat: number, lon: number, doReverse = false, presetAddr?: string) {
-    markerRef.current?.setLatLng([lat, lon]);
-    instanceRef.current?.map?.panTo([lat, lon]);
-
-    let address = presetAddr ?? '';
-    if (doReverse && !presetAddr) {
-      address = await reverseGeocode(lat, lon);
-      if (address) setQuery(address);
-    }
-    onChange?.({ lat, lon, address });
-  }
-
+  // Обратное геокодирование при перемещении маркера / клике по карте
   async function reverseGeocode(lat: number, lon: number) {
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru&lat=${lat}&lon=${lon}`
-      );
-      const j = await r.json();
-      return j?.display_name as string;
+      const url = new URL('https://nominatim.openstreetmap.org/reverse');
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('lat', String(lat));
+      url.searchParams.set('lon', String(lon));
+      url.searchParams.set('addressdetails', '1');
+      const res = await fetch(url.toString(), {
+        headers: { 'Accept-Language': 'ru' },
+      });
+      const data: any = await res.json();
+      const label: string = data.display_name ?? '';
+      setSelectedLabel(label);
+      setQuery(label);
+      onChange({ lat, lon, address: label });
     } catch {
-      return '';
+      onChange({ lat, lon });
     }
   }
 
-  // клавиатурная навигация по списку
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!suggests.length) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((i) => (i + 1) % suggests.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((i) => (i - 1 + suggests.length) % suggests.length);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      pick(suggests[active]);
-    } else if (e.key === 'Escape') {
-      setSuggests([]);
-    }
+  // Слой слушателя кликов по карте
+  function ClickCatcher() {
+    // @ts-ignore — типы подтянутся на клиенте
+    useMapEvents({
+      click(e: any) {
+        const lat = e.latlng.lat as number;
+        const lon = e.latlng.lng as number;
+        setMarker({ lat, lon });
+        reverseGeocode(lat, lon);
+      },
+    });
+    return null;
   }
 
   return (
-    <div className="mt-4">
-      {/* Поиск адреса */}
-      <div className="relative">
+    <div className="mt-6">
+      {/* ВАЖНО: relative — создаёт стек для absolute-списка */}
+      <div ref={boxRef} className="relative">
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={`Начните вводить адрес… (${city})`}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedLabel('');
+          }}
+          placeholder="Начните вводить адрес…"
           className="w-full rounded-xl border px-3 py-2"
         />
-        {!!suggests.length && (
-          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border bg-white shadow">
-            {suggests.map((s, i) => (
-              <button
+
+        {/* Выпадающий список — поверх карты */}
+        {suggestions.length > 0 && (
+          <ul className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-xl border bg-white shadow-lg">
+            {suggestions.map((s, i) => (
+              <li
                 key={`${s.lat}-${s.lon}-${i}`}
-                type="button"
-                onClick={() => pick(s)}
-                className={`block w-full text-left px-3 py-2 ${
-                  i === active ? 'bg-gray-100' : 'hover:bg-gray-50'
-                }`}
+                className="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50"
+                onClick={() => chooseItem(s)}
               >
-                {s.display_name}
-              </button>
+                {s.label}
+              </li>
             ))}
-          </div>
-        )}
-        {loading && (
-          <div className="absolute right-3 top-2.5 text-xs text-gray-500">ищем…</div>
+            {loading && (
+              <li className="px-3 py-2 text-xs text-gray-500 border-t">Поиск…</li>
+            )}
+          </ul>
         )}
       </div>
 
-      {/* Карта */}
-      <div
-        ref={mapRef}
-        className="mt-3 w-full rounded-2xl border bg-gray-100"
-        style={{ height: 360 }}
-      />
+      {/* Контейнер карты — ниже списка (z-0) */}
+      <div className="relative z-0 mt-3 overflow-hidden rounded-2xl border">
+        <MapContainer
+          center={[cityCenter.lat, cityCenter.lon]}
+          zoom={cityCenter.zoom}
+          style={{ height: 360 }}
+          scrollWheelZoom
+        >
+          {/* Светлая современная подложка Carto */}
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" />
+          <ClickCatcher />
+          {marker && (
+            <Marker
+              position={[marker.lat, marker.lon]}
+              draggable
+              // @ts-ignore react-leaflet типы ок
+              eventHandlers={{
+                dragend: (e: any) => {
+                  const { lat, lng } = e.target.getLatLng();
+                  setMarker({ lat, lon: lng });
+                  reverseGeocode(lat, lng);
+                },
+              }}
+              // Чёрная точка-иконка
+              icon={L.icon({
+                iconUrl:
+                  'data:image/svg+xml;utf8,' +
+                  encodeURIComponent(
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+                      <circle cx="14" cy="14" r="7" fill="#111111"/>
+                      <circle cx="14" cy="14" r="9" fill="none" stroke="#111111" stroke-opacity="0.25" stroke-width="2"/>
+                    </svg>`
+                  ),
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+              })}
+            />
+          )}
+        </MapContainer>
+      </div>
+
+      {/* Подписка-подсказка текущего адреса */}
+      {selectedLabel && (
+        <div className="mt-3 text-sm text-gray-700">{selectedLabel}</div>
+      )}
     </div>
   );
 }
