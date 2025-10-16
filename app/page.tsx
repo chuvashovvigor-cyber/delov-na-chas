@@ -18,7 +18,10 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
             <button className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200">Войти</button>
-            <a href="#order" className="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black">Вызвать мастера</a>
+            <a href="/order" className="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black">
+  Вызвать мастера
+</a>
+
           </div>
         </div>
       </header>
