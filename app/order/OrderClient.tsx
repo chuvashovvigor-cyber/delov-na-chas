@@ -1,47 +1,44 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { Icon, LatLngExpression } from 'leaflet'; // ← вместо глобального L
+
+// динамические импорты (чтобы не ломать SSR)
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((m) => m.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
 
 type Props = {
   city: string;
   onChange: (p: { lat: number; lon: number; address?: string }) => void;
 };
 
-// Ленивая загрузка react-leaflet только на клиенте
-const MapContainer = dynamic(
-  async () => (await import('react-leaflet')).MapContainer,
-  { ssr: false }
-);
-const TileLayer = dynamic(async () => (await import('react-leaflet')).TileLayer, { ssr: false });
-const Marker = dynamic(async () => (await import('react-leaflet')).Marker, { ssr: false });
-const useMapEvents = (await import('react-leaflet')).useMapEvents; // типы, не ломает SSR
-
 export default function OrderClient({ city, onChange }: Props) {
-  // Центр для Калуги
   const cityCenter = useMemo(() => {
     if (city === 'Калуга') return { lat: 54.513845, lon: 36.261215, zoom: 14 };
     return { lat: 54.513845, lon: 36.261215, zoom: 14 };
   }, [city]);
 
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<Array<{ label: string; lat: number; lon: number }>>(
-    []
-  );
+  const [suggestions, setSuggestions] = useState<
+    Array<{ label: string; lat: number; lon: number }>
+  >([]);
   const [loading, setLoading] = useState(false);
   const [marker, setMarker] = useState<{ lat: number; lon: number } | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string>('');
 
-  const boxRef = useRef<HTMLDivElement | null>(null);
-
-  // Поиск по Nominatim (OpenStreetMap) — живые подсказки
+  // live-подсказки (Nominatim)
   useEffect(() => {
     let cancelled = false;
     if (!query.trim()) {
       setSuggestions([]);
       return;
     }
-    const handler = setTimeout(async () => {
+    const t = setTimeout(async () => {
       try {
         setLoading(true);
         const url = new URL('https://nominatim.openstreetmap.org/search');
@@ -49,30 +46,22 @@ export default function OrderClient({ city, onChange }: Props) {
         url.searchParams.set('format', 'json');
         url.searchParams.set('addressdetails', '1');
         url.searchParams.set('limit', '8');
-        const res = await fetch(url.toString(), {
-          headers: { 'Accept-Language': 'ru' },
-        });
+        const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'ru' } });
         const data: any[] = await res.json();
         if (cancelled) return;
-        const list = data.map((it) => ({
-          label: it.display_name as string,
-          lat: Number(it.lat),
-          lon: Number(it.lon),
-        }));
-        setSuggestions(list);
-      } catch {
-        // ignore
+        setSuggestions(
+          data.map((it) => ({ label: it.display_name as string, lat: +it.lat, lon: +it.lon }))
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }, 250); // debounce
+    }, 250);
     return () => {
       cancelled = true;
-      clearTimeout(handler);
+      clearTimeout(t);
     };
   }, [query, city]);
 
-  // Выбор подсказки
   function chooseItem(item: { label: string; lat: number; lon: number }) {
     setSelectedLabel(item.label);
     setQuery(item.label);
@@ -82,7 +71,6 @@ export default function OrderClient({ city, onChange }: Props) {
     onChange({ ...p, address: item.label });
   }
 
-  // Обратное геокодирование при перемещении маркера / клике по карте
   async function reverseGeocode(lat: number, lon: number) {
     try {
       const url = new URL('https://nominatim.openstreetmap.org/reverse');
@@ -90,11 +78,9 @@ export default function OrderClient({ city, onChange }: Props) {
       url.searchParams.set('lat', String(lat));
       url.searchParams.set('lon', String(lon));
       url.searchParams.set('addressdetails', '1');
-      const res = await fetch(url.toString(), {
-        headers: { 'Accept-Language': 'ru' },
-      });
+      const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'ru' } });
       const data: any = await res.json();
-      const label: string = data.display_name ?? '';
+      const label = data.display_name ?? '';
       setSelectedLabel(label);
       setQuery(label);
       onChange({ lat, lon, address: label });
@@ -103,24 +89,28 @@ export default function OrderClient({ city, onChange }: Props) {
     }
   }
 
-  // Слой слушателя кликов по карте
-  function ClickCatcher() {
-    // @ts-ignore — типы подтянутся на клиенте
-    useMapEvents({
-      click(e: any) {
-        const lat = e.latlng.lat as number;
-        const lon = e.latlng.lng as number;
-        setMarker({ lat, lon });
-        reverseGeocode(lat, lon);
-      },
-    });
-    return null;
-  }
+  // чёрная иконка-маркер (через импортированный Icon)
+  const blackIcon = useMemo(
+    () =>
+      new Icon({
+        iconUrl:
+          'data:image/svg+xml;utf8,' +
+          encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+               <circle cx="14" cy="14" r="7" fill="#111111"/>
+               <circle cx="14" cy="14" r="9" fill="none" stroke="#111111" stroke-opacity="0.25" stroke-width="2"/>
+             </svg>`
+          ),
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    []
+  );
 
   return (
     <div className="mt-6">
-      {/* ВАЖНО: relative — создаёт стек для absolute-списка */}
-      <div ref={boxRef} className="relative">
+      {/* поиск — поверх карты */}
+      <div className="relative">
         <input
           value={query}
           onChange={(e) => {
@@ -131,7 +121,6 @@ export default function OrderClient({ city, onChange }: Props) {
           className="w-full rounded-xl border px-3 py-2"
         />
 
-        {/* Выпадающий список — поверх карты */}
         {suggestions.length > 0 && (
           <ul className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-xl border bg-white shadow-lg">
             {suggestions.map((s, i) => (
@@ -143,29 +132,31 @@ export default function OrderClient({ city, onChange }: Props) {
                 {s.label}
               </li>
             ))}
-            {loading && (
-              <li className="px-3 py-2 text-xs text-gray-500 border-t">Поиск…</li>
-            )}
+            {loading && <li className="px-3 py-2 text-xs text-gray-500 border-t">Поиск…</li>}
           </ul>
         )}
       </div>
 
-      {/* Контейнер карты — ниже списка (z-0) */}
       <div className="relative z-0 mt-3 overflow-hidden rounded-2xl border">
         <MapContainer
-          center={[cityCenter.lat, cityCenter.lon]}
+          center={[cityCenter.lat, cityCenter.lon] as LatLngExpression}
           zoom={cityCenter.zoom}
           style={{ height: 360 }}
           scrollWheelZoom
+          whenCreated={(map) => {
+            map.on('click', (e: any) => {
+              const { lat, lng } = e.latlng;
+              setMarker({ lat, lon: lng });
+              reverseGeocode(lat, lng);
+            });
+          }}
         >
-          {/* Светлая современная подложка Carto */}
+          {/* светлая современная подложка */}
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" />
-          <ClickCatcher />
           {marker && (
             <Marker
-              position={[marker.lat, marker.lon]}
+              position={[marker.lat, marker.lon] as LatLngExpression}
               draggable
-              // @ts-ignore react-leaflet типы ок
               eventHandlers={{
                 dragend: (e: any) => {
                   const { lat, lng } = e.target.getLatLng();
@@ -173,28 +164,13 @@ export default function OrderClient({ city, onChange }: Props) {
                   reverseGeocode(lat, lng);
                 },
               }}
-              // Чёрная точка-иконка
-              icon={L.icon({
-                iconUrl:
-                  'data:image/svg+xml;utf8,' +
-                  encodeURIComponent(
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-                      <circle cx="14" cy="14" r="7" fill="#111111"/>
-                      <circle cx="14" cy="14" r="9" fill="none" stroke="#111111" stroke-opacity="0.25" stroke-width="2"/>
-                    </svg>`
-                  ),
-                iconSize: [28, 28],
-                iconAnchor: [14, 14],
-              })}
+              icon={blackIcon}
             />
           )}
         </MapContainer>
       </div>
 
-      {/* Подписка-подсказка текущего адреса */}
-      {selectedLabel && (
-        <div className="mt-3 text-sm text-gray-700">{selectedLabel}</div>
-      )}
+      {selectedLabel && <div className="mt-3 text-sm text-gray-700">{selectedLabel}</div>}
     </div>
   );
 }
