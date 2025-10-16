@@ -4,9 +4,15 @@ import { useState } from 'react';
 import OrderClient from './OrderClient';
 
 type Preview = { name: string; url: string; type: string };
+type Point = { lat: number; lon: number; address?: string };
 
 export default function OrderPage() {
   const [files, setFiles] = useState<Preview[]>([]);
+  const [point, setPoint] = useState<Point>({
+    lat: 54.513845,
+    lon: 36.261215,
+    address: '',
+  });
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const f = Array.from(e.target.files ?? []);
@@ -17,6 +23,12 @@ export default function OrderPage() {
     }));
     setFiles(previews);
   }
+
+  // демо-мастера (потом сюда будем подставлять реальные координаты из Telegram)
+  const masters = [
+    { lat: 54.5205, lon: 36.27, name: 'Сергей' },
+    { lat: 54.50, lon: 36.24, name: 'Алексей' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -44,7 +56,7 @@ export default function OrderPage() {
               Вызвать мастера
             </h1>
             <p className="mt-3 text-gray-600">
-              Опишите задачу — заявка прилетит в наш Telegram-чат.
+              Укажите адрес (поиск с подсказками), прикрепите фото/видео и отправьте заявку.
             </p>
 
             <form
@@ -55,10 +67,21 @@ export default function OrderPage() {
             >
               <input name="name" required placeholder="Ваше имя" className="rounded-xl border px-3 py-2" />
               <input name="phone" required placeholder="Телефон" className="rounded-xl border px-3 py-2" />
-              <input name="address" placeholder="Адрес (необязательно)" className="rounded-xl border px-3 py-2" />
+              {/* адрес — синхронизируем с картой через hidden */}
+              <input
+                name="address"
+                placeholder="Адрес (если пусто — возьмём с карты)"
+                className="rounded-xl border px-3 py-2"
+                value={point.address || ''}
+                onChange={(e) => setPoint((p) => ({ ...p, address: e.target.value }))}
+              />
               <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
 
-              {/* загрузка медиа + предпросмотр */}
+              {/* скрытые координаты */}
+              <input type="hidden" name="lat" value={point.lat} />
+              <input type="hidden" name="lon" value={point.lon} />
+
+              {/* Загрузка медиа + предпросмотр */}
               <div className="grid gap-2">
                 <input
                   id="media"
@@ -103,21 +126,24 @@ export default function OrderPage() {
             </form>
           </section>
 
-          {/* ПРАВАЯ КОЛОНКА: город, адрес, карта */}
+          {/* ПРАВАЯ КОЛОНКА: поиск + карта + мастера */}
           <aside className="rounded-3xl border bg-white p-4 shadow-sm">
             <div className="text-sm font-semibold mb-3">Город</div>
             <select className="w-full rounded-xl border px-3 py-2 bg-white">
               <option value="kaluga">Калуга</option>
             </select>
 
-            <div className="mt-6 text-sm font-semibold">Адрес</div>
-            <input placeholder="Начните вводить адрес..." className="mt-2 w-full rounded-xl border px-3 py-2" />
-
-            {/* Живая карта */}
-            <OrderClient />
+            {/* Поиск + карта + кликабельная/перетаскиваемая метка.
+                onChange отдаёт lat/lon/address и мы держим это в state,
+                а в форму прокидываем через hidden поля */}
+            <OrderClient
+              value={point}
+              onChange={(p) => setPoint(p)}
+              masters={masters}
+            />
 
             <div className="mt-4 text-sm text-gray-600">
-              Выберите город, укажите адрес и отправьте заявку — менеджер уточнит детали и даст ETA.
+              Кликните по карте или перетащите метку — адрес подставится автоматически.
             </div>
           </aside>
         </div>
