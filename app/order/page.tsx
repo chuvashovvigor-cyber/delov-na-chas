@@ -1,11 +1,11 @@
-// app/order/OrderClient.tsx
 'use client';
 
 import { useState } from 'react';
+import OrderClient from './OrderClient';
 
 type Preview = { name: string; url: string; type: string };
 
-export default function OrderClient() {
+export default function OrderPage() {
   const [files, setFiles] = useState<Preview[]>([]);
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -38,9 +38,14 @@ export default function OrderClient() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* ФОРМА */}
           <section>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">Вызвать мастера</h1>
-            <p className="mt-3 text-gray-600">Опишите задачу — заявка прилетит в наш Telegram-чат.</p>
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+              Вызвать мастера
+            </h1>
+            <p className="mt-3 text-gray-600">
+              Опишите задачу — заявка прилетит в наш Telegram-чат.
+            </p>
 
             <form
               method="post"
@@ -53,7 +58,7 @@ export default function OrderClient() {
               <input name="address" placeholder="Адрес (необязательно)" className="rounded-xl border px-3 py-2" />
               <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
 
-              {/* Загрузка медиа + предпросмотр */}
+              {/* загрузка медиа + предпросмотр */}
               <div className="grid gap-2">
                 <input
                   id="media"
@@ -98,6 +103,7 @@ export default function OrderClient() {
             </form>
           </section>
 
+          {/* ПРАВАЯ КОЛОНКА: город, адрес, карта */}
           <aside className="rounded-3xl border bg-white p-4 shadow-sm">
             <div className="text-sm font-semibold mb-3">Город</div>
             <select className="w-full rounded-xl border px-3 py-2 bg-white">
@@ -107,9 +113,8 @@ export default function OrderClient() {
             <div className="mt-6 text-sm font-semibold">Адрес</div>
             <input placeholder="Начните вводить адрес..." className="mt-2 w-full rounded-xl border px-3 py-2" />
 
-            <div className="mt-4 aspect-[16/10] w-full rounded-2xl bg-gray-100 grid place-items-center text-gray-500">
-              Карта (здесь позже подключим поиски и метку)
-            </div>
+            {/* Живая карта */}
+            <OrderClient />
 
             <div className="mt-4 text-sm text-gray-600">
               Выберите город, укажите адрес и отправьте заявку — менеджер уточнит детали и даст ETA.
