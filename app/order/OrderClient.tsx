@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Icon, LatLngExpression } from 'leaflet'; // ← вместо глобального L
+import { Icon, LatLngExpression } from 'leaflet';
 
-// динамические импорты (чтобы не ломать SSR)
+// динамические импорты без SSR
 const MapContainer = dynamic(
   () => import('react-leaflet').then((m) => m.MapContainer),
   { ssr: false }
@@ -31,7 +31,7 @@ export default function OrderClient({ city, onChange }: Props) {
   const [marker, setMarker] = useState<{ lat: number; lon: number } | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string>('');
 
-  // live-подсказки (Nominatim)
+  // live-подсказки (OSM/Nominatim)
   useEffect(() => {
     let cancelled = false;
     if (!query.trim()) {
@@ -89,7 +89,7 @@ export default function OrderClient({ city, onChange }: Props) {
     }
   }
 
-  // чёрная иконка-маркер (через импортированный Icon)
+  // чёрная метка
   const blackIcon = useMemo(
     () =>
       new Icon({
@@ -107,9 +107,19 @@ export default function OrderClient({ city, onChange }: Props) {
     []
   );
 
+  // обработчик инициализации карты — вешаем click и reverse geocode
+  // (типизируем через any, т.к. у некоторых версий типов нет whenCreated)
+  const handleMapCreated = (map: any) => {
+    map.on('click', (e: any) => {
+      const { lat, lng } = e.latlng;
+      setMarker({ lat, lon: lng });
+      reverseGeocode(lat, lng);
+    });
+  };
+
   return (
     <div className="mt-6">
-      {/* поиск — поверх карты */}
+      {/* поиск над картой */}
       <div className="relative">
         <input
           value={query}
@@ -137,21 +147,17 @@ export default function OrderClient({ city, onChange }: Props) {
         )}
       </div>
 
+      {/* карта под поиском */}
       <div className="relative z-0 mt-3 overflow-hidden rounded-2xl border">
         <MapContainer
           center={[cityCenter.lat, cityCenter.lon] as LatLngExpression}
           zoom={cityCenter.zoom}
           style={{ height: 360 }}
           scrollWheelZoom
-          whenCreated={(map) => {
-            map.on('click', (e: any) => {
-              const { lat, lng } = e.latlng;
-              setMarker({ lat, lon: lng });
-              reverseGeocode(lat, lng);
-            });
-          }}
+          // >>> гасим претензии TS к whenCreated типом any
+          {...({ whenCreated: handleMapCreated } as any)}
         >
-          {/* светлая современная подложка */}
+          {/* современная светлая подложка */}
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" />
           {marker && (
             <Marker
