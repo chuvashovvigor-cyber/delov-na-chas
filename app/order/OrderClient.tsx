@@ -9,7 +9,6 @@ type Suggest = { display_name: string; lat: string; lon: string };
 type Props = {
   value?: Point;
   onChange?: (p: Point) => void;
-  /** необязательно: сюда можно передать координаты активных мастеров */
   masters?: Array<{ lat: number; lon: number; name?: string }>;
 };
 
@@ -21,17 +20,48 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
   const [loading, setLoading] = useState(false);
   const [suggests, setSuggests] = useState<Suggest[]>([]);
 
-  // иконки
+  /** === КАКИЕ ТАЙЛЫ ИСПОЛЬЗОВАТЬ ===
+   * 'voyager' — современно/цветно (по умолчанию)
+   * 'osm'     — классика OSM Standard (чаще видно номера домов на больших зумах)
+   * 'hot'     — яркая схема HOT (Humanitarian)
+   */
+  const TILE: 'voyager' | 'osm' | 'hot' = 'voyager';
+
+  function getTile() {
+    switch (TILE) {
+      case 'osm':
+        return {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 20,
+        };
+      case 'hot':
+        return {
+          url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+          attribution:
+            '&copy; OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France',
+          maxZoom: 20,
+        };
+      default: // 'voyager'
+        return {
+          url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          maxZoom: 20,
+        };
+    }
+  }
+
+  // Чёрная метка пользователя (divIcon)
   const getUserIcon = (L: any) =>
-    L.icon({
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      shadowSize: [41, 41],
+    L.divIcon({
+      className: '',
+      html:
+        '<div style="width:18px;height:18px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.25);transform:translate(-50%,-50%)"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
     });
 
+  // Иконка мастера (машинка-эмодзи)
   const getMasterIcon = (L: any) =>
     L.divIcon({
       className: 'master-icon',
@@ -41,36 +71,24 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
       iconAnchor: [11, 11],
     });
 
-  // инициализация карты
   useEffect(() => {
     let map: any;
-    let Lmod: any;
 
     (async () => {
       // @ts-expect-error no types
       const L = await import('leaflet');
-      Lmod = L;
-
       if (!mapRef.current) return;
 
-      // Калуга по умолчанию
       const start: [number, number] = value
         ? [value.lat, value.lon]
-        : [54.513845, 36.261215];
+        : [54.513845, 36.261215]; // Калуга
 
-      map = L.map(mapRef.current).setView(start, 12);
+      map = L.map(mapRef.current, { zoomControl: true }).setView(start, 13);
 
-      // посимпатичнее тайлы
-      L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        {
-          attribution:
-            '&copy; OpenStreetMap &copy; CARTO',
-          maxZoom: 19,
-        }
-      ).addTo(map);
+      const { url, attribution, maxZoom } = getTile();
+      L.tileLayer(url, { attribution, maxZoom }).addTo(map);
 
-      // маркер пользователя
+      // пользовательская метка
       markerRef.current = L.marker(start, {
         draggable: true,
         icon: getUserIcon(L),
@@ -78,7 +96,7 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
         .addTo(map)
         .bindPopup('Ваш адрес');
 
-      // клик по карте — ставим маркер, реверс-геокодим
+      // клик по карте
       map.on('click', async (e: any) => {
         const lat = e.latlng.lat;
         const lon = e.latlng.lng;
@@ -88,14 +106,14 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
         onChange?.({ lat, lon, address: addr });
       });
 
-      // перетаскивание маркера — реверс-геокодим
+      // перетаскивание
       markerRef.current.on('dragend', async () => {
         const { lat, lng } = markerRef.current.getLatLng();
         const addr = await reverseGeocode(lat, lng);
         onChange?.({ lat, lon: lng, address: addr });
       });
 
-      // мастера (если передали)
+      // мастера
       masters.forEach((m) => {
         L.marker([m.lat, m.lon], { icon: getMasterIcon(L) })
           .addTo(map)
@@ -113,14 +131,13 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // если пришло начальное значение — переставим маркер
   useEffect(() => {
     if (!value || !instanceRef.current || !markerRef.current) return;
     markerRef.current.setLatLng([value.lat, value.lon]);
     instanceRef.current.map.panTo([value.lat, value.lon]);
   }, [value]);
 
-  // debounced подсказки
+  // Поиск с подсказками
   useEffect(() => {
     if (!query.trim()) {
       setSuggests([]);
@@ -133,7 +150,7 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
           `https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=ru&q=${encodeURIComponent(
             query
           )}`,
-          { headers: { 'Accept': 'application/json' } }
+          { headers: { Accept: 'application/json' } }
         );
         const data: Suggest[] = await r.json();
         setSuggests(data);
@@ -161,18 +178,16 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
   async function pickSuggestion(s: Suggest) {
     const lat = parseFloat(s.lat);
     const lon = parseFloat(s.lon);
-    // visual
     markerRef.current?.setLatLng([lat, lon]);
     instanceRef.current?.map?.panTo([lat, lon]);
     setSuggests([]);
     setQuery(s.display_name);
-    // callback вверх
     onChange?.({ lat, lon, address: s.display_name });
   }
 
   return (
     <div className="mt-4">
-      {/* Поиск адреса + подсказки */}
+      {/* Поиск адреса */}
       <div className="relative">
         <input
           value={query}
@@ -195,9 +210,7 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
           </div>
         )}
         {loading && (
-          <div className="absolute right-3 top-2.5 text-xs text-gray-500">
-            ищем…
-          </div>
+          <div className="absolute right-3 top-2.5 text-xs text-gray-500">ищем…</div>
         )}
       </div>
 
