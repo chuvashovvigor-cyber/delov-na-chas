@@ -2,37 +2,34 @@
 
 import { useRef, useState } from 'react';
 
-type Preview = { file: File; url: string; type: 'image'|'video' };
+type Preview = { file: File; url: string; type: 'image' | 'video' };
 
 export default function MediaPicker() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<Preview[]>([]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const fl = Array.from(e.target.files ?? [])
-      .slice(0, 10); // ограничим до 10
-    const next = fl.map(f => ({
+    const fl = Array.from(e.target.files ?? []).slice(0, 10);
+    const next = fl.map((f) => ({
       file: f,
       url: URL.createObjectURL(f),
-      type: f.type.startsWith('image/') ? 'image' : 'video' as const
-    }));
-    setFiles(prev => [...prev, ...next]);
+      type: f.type.startsWith('image/') ? 'image' : 'video',
+    })) as Preview[];
+    setFiles((prev) => [...prev, ...next]);
   }
 
   function removeAt(i: number) {
-    setFiles(prev => {
+    setFiles((prev) => {
       const copy = [...prev];
       URL.revokeObjectURL(copy[i].url);
       copy.splice(i, 1);
       return copy;
     });
-    // сбрасываем input, чтобы можно было прикрепить тот же файл заново
     if (inputRef.current) inputRef.current.value = '';
   }
 
   return (
     <div className="grid gap-2">
-      {/* реальный input — скрыт, но ИМЕННО он уйдёт на /api/order */}
       <input
         ref={inputRef}
         id="media"
@@ -55,7 +52,7 @@ export default function MediaPicker() {
       {files.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {files.map((p, i) => (
-            <div key={i} className="relative group rounded-xl overflow-hidden border bg-black/5">
+            <div key={`${p.url}-${i}`} className="relative rounded-xl overflow-hidden border bg-black/5">
               {p.type === 'image' ? (
                 <img src={p.url} alt="" className="h-28 w-full object-cover" />
               ) : (
