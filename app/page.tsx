@@ -31,7 +31,7 @@ export default function LandingPage() {
               Фикс-цены, быстрые заявки, подписки для физ и юр лиц. Живой трекинг мастера — как в такси.
             </p>
 
-            {/* --- Зелёные «светящиеся» индикаторы --- */}
+            {/* индикаторы с подсветкой/пульсом */}
             <div className="mt-6 flex items-center gap-6 text-sm text-gray-600">
               {[
                 'Фикс-цена до выезда',
@@ -40,8 +40,8 @@ export default function LandingPage() {
               ].map((label) => (
                 <div key={label} className="flex items-center gap-2">
                   <span className="relative inline-flex">
-                    <span className="dot" />
-                    <span className="ping" />
+                    <span className="dnch-dot" />
+                    <span className="dnch-ping" />
                   </span>
                   {label}
                 </div>
@@ -235,30 +235,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
-      {/* Стили для светящихся индикаторов */}
-      <style jsx>{`
-        .dot{
-          width:8px;height:8px;border-radius:9999px;background:#22c55e;
-          box-shadow:0 0 6px rgba(34,197,94,.7),0 0 12px rgba(34,197,94,.5);
-          animation:glow 1.8s ease-in-out infinite;
-        }
-        .ping{
-          position:absolute;inset:0;border-radius:9999px;background:rgba(34,197,94,.35);
-          filter:blur(1px);
-          animation:ping 1.8s ease-out infinite;
-          pointer-events:none;
-        }
-        @keyframes glow{
-          0%,100%{ box-shadow:0 0 6px rgba(34,197,94,.7),0 0 12px rgba(34,197,94,.5); transform:scale(1); }
-          50%   { box-shadow:0 0 14px rgba(34,197,94,1),0 0 28px rgba(34,197,94,.8); transform:scale(1.05); }
-        }
-        @keyframes ping{
-          0%   { transform:scale(1);   opacity:.6 }
-          80%  { transform:scale(2.2); opacity:0  }
-          100% { transform:scale(2.4); opacity:0  }
-        }
-      `}</style>
     </div>
   );
 }
