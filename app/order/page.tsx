@@ -151,3 +151,31 @@ export default function OrderPage() {
     </div>
   );
 }
+'use client';
+import { useState } from 'react';
+import OrderClient from './OrderClient';
+
+export default function OrderPage() {
+  const [city, setCity] = useState('Калуга');
+
+  // ...твой код формы...
+
+  return (
+    // ...
+    <aside className="rounded-3xl border bg-white p-4 shadow-sm">
+      <div className="text-sm font-semibold mb-3">Город</div>
+      <select
+        className="w-full rounded-xl border px-3 py-2 bg-white"
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+      >
+        <option value="Калуга">Калуга</option>
+        {/* потом добавим ещё города */}
+      </select>
+
+      {/* ВАЖНО: передаём city в OrderClient */}
+      <OrderClient city={city} onChange={(p) => {/* сохраняй адрес/координаты в форму если нужно */}} />
+    </aside>
+    // ...
+  );
+}
