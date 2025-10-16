@@ -5,7 +5,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-gray-900" />
-            <span className="font-semibold">Делов‑на‑час</span>
+            <span className="font-semibold">Делов-на-час</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#services" className="hover:text-gray-700">Услуги</a>
@@ -25,21 +25,35 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16 grid lg:grid-cols-2 gap-8 items-center">
           <div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-              Делов‑на‑час — мастер на час и отделочные работы в Калуге
+              Делов-на-час — мастер на час и отделочные работы в Калуге
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              Фикс‑цены, быстрые заявки, подписки для физ и юр лиц. Живой трекинг мастера — как в такси.
+              Фикс-цены, быстрые заявки, подписки для физ и юр лиц. Живой трекинг мастера — как в такси.
             </p>
+
+            {/* --- Зелёные «светящиеся» индикаторы --- */}
+            <div className="mt-6 flex items-center gap-6 text-sm text-gray-600">
+              {[
+                'Фикс-цена до выезда',
+                'Приоритет по подписке',
+                'Оплата на месте/онлайн',
+              ].map((label) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="relative inline-flex">
+                    <span className="dot" />
+                    <span className="ping" />
+                  </span>
+                  {label}
+                </div>
+              ))}
+            </div>
+
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#order" className="px-5 py-3 rounded-2xl bg-gray-900 text-white hover:bg-black">Рассчитать и вызвать</a>
               <a href="#subscription" className="px-5 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200">Оформить подписку</a>
             </div>
-            <div className="mt-6 flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-green-500"/>Фикс‑цена до выезда</div>
-              <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-green-500"/>Приоритет по подписке</div>
-              <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-green-500"/>Оплата на месте/онлайн</div>
-            </div>
           </div>
+
           <div className="relative">
             <div className="rounded-3xl border bg-white p-4 shadow-sm">
               <div className="aspect-[16/10] w-full rounded-2xl bg-gray-100 grid place-items-center text-gray-500">
@@ -60,9 +74,10 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+
             <div className="absolute -bottom-6 -left-6 hidden lg:block">
               <div className="rounded-2xl border bg-white p-4 shadow-sm w-72">
-                <div className="text-sm font-semibold">Мини‑калькулятор</div>
+                <div className="text-sm font-semibold">Мини-калькулятор</div>
                 <div className="mt-3 grid gap-2">
                   <select className="w-full rounded-xl border px-3 py-2 bg-white">
                     <option>Выберите категорию</option>
@@ -72,8 +87,8 @@ export default function LandingPage() {
                     <option>Отделка</option>
                     <option>Демонтаж</option>
                   </select>
-                  <input className="w-full rounded-xl border px-3 py-2" placeholder="Что сделать?"/>
-                  <input className="w-full rounded-xl border px-3 py-2" placeholder="Кол-во / м²"/>
+                  <input className="w-full rounded-xl border px-3 py-2" placeholder="Что сделать?" />
+                  <input className="w-full rounded-xl border px-3 py-2" placeholder="Кол-во / м²" />
                   <button className="w-full rounded-xl bg-gray-900 text-white py-2">Рассчитать</button>
                 </div>
               </div>
@@ -88,7 +103,7 @@ export default function LandingPage() {
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6 opacity-70">
             <div className="h-10 rounded bg-gray-100 grid place-items-center">ВТБ</div>
             <div className="h-10 rounded bg-gray-100 grid place-items-center">El Coffee</div>
-            <div className="h-10 rounded bg-gray-100 grid place-items-center">Bla‑Bla bar</div>
+            <div className="h-10 rounded bg-gray-100 grid place-items-center">Bla-Bla bar</div>
             <div className="h-10 rounded bg-gray-100 grid place-items-center">ДК «Арбат»</div>
           </div>
         </div>
@@ -99,12 +114,14 @@ export default function LandingPage() {
           <h2 className="text-2xl font-bold">Как это работает</h2>
           <div className="mt-6 grid sm:grid-cols-3 gap-4">
             {[
-              {t:"Описываете задачу", d:"Заполняете форму, прикрепляете фото/видео"},
-              {t:"Получаете цену", d:"Менеджер подтверждает фикс‑стоимость"},
-              {t:"Следите на карте", d:"Мастер едет к вам, виден ETA и статус"},
+              { t: 'Описываете задачу', d: 'Заполняете форму, прикрепляете фото/видео' },
+              { t: 'Получаете цену', d: 'Менеджер подтверждает фикс-стоимость' },
+              { t: 'Следите на карте', d: 'Мастер едет к вам, виден ETA и статус' },
             ].map((s, i) => (
               <div key={i} className="rounded-2xl border bg-white p-5">
-                <div className="h-8 w-8 rounded-full bg-gray-900 text-white grid place-items-center font-semibold">{i+1}</div>
+                <div className="h-8 w-8 rounded-full bg-gray-900 text-white grid place-items-center font-semibold">
+                  {i + 1}
+                </div>
                 <div className="mt-3 font-semibold">{s.t}</div>
                 <div className="mt-1 text-gray-600 text-sm">{s.d}</div>
               </div>
@@ -118,17 +135,19 @@ export default function LandingPage() {
           <h2 className="text-2xl font-bold">Популярные услуги</h2>
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              {t:"Электрика", d:"Розетки, выключатели, светильники, автоматы"},
-              {t:"Сантехника", d:"Смесители, унитазы, протечки, подключение техники"},
-              {t:"Сборка и мелкий ремонт", d:"Мебель, полки, карнизы, дверные ручки"},
-              {t:"Отделка", d:"Шпаклёвка, штукатурка, покраска, армирование сеткой"},
-              {t:"Монтаж/демонтаж", d:"Возведение/ломка стен, проёмы, двери"},
-              {t:"Диагностика", d:"Электрика/сантехника, замеры, скрытые коммуникации"},
-            ].map((c,i)=>(
+              { t: 'Электрика', d: 'Розетки, выключатели, светильники, автоматы' },
+              { t: 'Сантехника', d: 'Смесители, унитазы, протечки, подключение техники' },
+              { t: 'Сборка и мелкий ремонт', d: 'Мебель, полки, карнизы, дверные ручки' },
+              { t: 'Отделка', d: 'Шпаклёвка, штукатурка, покраска, армирование сеткой' },
+              { t: 'Монтаж/демонтаж', d: 'Возведение/ломка стен, проёмы, двери' },
+              { t: 'Диагностика', d: 'Электрика/сантехника, замеры, скрытые коммуникации' },
+            ].map((c, i) => (
               <div key={i} className="rounded-2xl border p-5 hover:shadow-sm transition">
                 <div className="font-semibold">{c.t}</div>
                 <div className="mt-1 text-sm text-gray-600">{c.d}</div>
-                <a href="#order" className="mt-4 inline-flex text-sm text-gray-900 underline underline-offset-4">Рассчитать и заказать</a>
+                <a href="#order" className="mt-4 inline-flex text-sm text-gray-900 underline underline-offset-4">
+                  Рассчитать и заказать
+                </a>
               </div>
             ))}
           </div>
@@ -140,10 +159,10 @@ export default function LandingPage() {
           <h2 className="text-2xl font-bold">Подписка для физ и юр лиц</h2>
           <div className="mt-6 grid md:grid-cols-3 gap-4">
             {[
-              {t:"Базовая", d:"Приоритетный выезд, скидка на работы"},
-              {t:"Стандарт", d:"Расширенный перечень, базовые расходники"},
-              {t:"Премиум", d:"Максимум включений, SLA по времени"},
-            ].map((p,i)=>(
+              { t: 'Базовая', d: 'Приоритетный выезд, скидка на работы' },
+              { t: 'Стандарт', d: 'Расширенный перечень, базовые расходники' },
+              { t: 'Премиум', d: 'Максимум включений, SLA по времени' },
+            ].map((p, i) => (
               <div key={i} className="rounded-2xl border bg-white p-5">
                 <div className="font-semibold">{p.t}</div>
                 <div className="mt-1 text-sm text-gray-600">{p.d}</div>
@@ -158,7 +177,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold">Кейсы и отзывы</h2>
           <div className="mt-6 grid md:grid-cols-3 gap-4">
-            {[1,2,3].map(i=> (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="rounded-2xl border overflow-hidden">
                 <div className="h-40 bg-gray-100 grid place-items-center text-gray-500">Фото {i}</div>
                 <div className="p-5">
@@ -172,12 +191,26 @@ export default function LandingPage() {
       </section>
 
       <section id="order" className="py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold">Готовы помочь сегодня</h2>
-          <p className="mt-2 text-gray-600">Опишите задачу и получите фикс‑цену и время приезда.</p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="#" className="px-5 py-3 rounded-2xl bg-gray-900 text-white">Заполнить заявку</a>
-            <a href="#" className="px-5 py-3 rounded-2xl bg-gray-100">Связаться в Telegram</a>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-center">Готовы помочь сегодня</h2>
+          <p className="mt-2 text-gray-600 text-center">
+            Опишите задачу — заявка прилетит в наш Telegram-чат.
+          </p>
+
+          <form method="post" action="/api/order" className="mx-auto mt-8 max-w-xl grid gap-3">
+            <input name="name" required placeholder="Ваше имя" className="rounded-xl border px-3 py-2" />
+            <input name="phone" required placeholder="Телефон" className="rounded-xl border px-3 py-2" />
+            <input name="address" placeholder="Адрес (необязательно)" className="rounded-xl border px-3 py-2" />
+            <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
+            <button className="rounded-2xl bg-gray-900 text-white py-3 hover:bg-black">Отправить заявку</button>
+          </form>
+
+          <div className="mt-4 text-center text-sm text-gray-500">
+            Или свяжитесь напрямую:
+            <div className="mt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="https://t.me/delov_na_chas_bot" className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200">Написать в Telegram</a>
+              <a href="tel:+7XXXXXXXXXX" className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200">Позвонить</a>
+            </div>
           </div>
         </div>
       </section>
@@ -190,9 +223,11 @@ export default function LandingPage() {
           </div>
           <div>
             <div className="font-semibold">Реквизиты</div>
-            <div className="mt-2 text-gray-600">ИП Чувашов Геннадий Валентинович
-ИНН 402900754277 · ОГРНИП 325400000013867
-Калужская обл., г. Калуга</div>
+            <div className="mt-2 text-gray-600">
+              ИП Чувашов Геннадий Валентинович<br/>
+              ИНН 402900754277 · ОГРНИП 325400000013867<br/>
+              Калужская обл., г. Калуга
+            </div>
           </div>
           <div>
             <div className="font-semibold">Документы</div>
@@ -200,6 +235,30 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Стили для светящихся индикаторов */}
+      <style jsx>{`
+        .dot{
+          width:8px;height:8px;border-radius:9999px;background:#22c55e;
+          box-shadow:0 0 6px rgba(34,197,94,.7),0 0 12px rgba(34,197,94,.5);
+          animation:glow 1.8s ease-in-out infinite;
+        }
+        .ping{
+          position:absolute;inset:0;border-radius:9999px;background:rgba(34,197,94,.35);
+          filter:blur(1px);
+          animation:ping 1.8s ease-out infinite;
+          pointer-events:none;
+        }
+        @keyframes glow{
+          0%,100%{ box-shadow:0 0 6px rgba(34,197,94,.7),0 0 12px rgba(34,197,94,.5); transform:scale(1); }
+          50%   { box-shadow:0 0 14px rgba(34,197,94,1),0 0 28px rgba(34,197,94,.8); transform:scale(1.05); }
+        }
+        @keyframes ping{
+          0%   { transform:scale(1);   opacity:.6 }
+          80%  { transform:scale(2.2); opacity:0  }
+          100% { transform:scale(2.4); opacity:0  }
+        }
+      `}</style>
     </div>
   );
 }
