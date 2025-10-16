@@ -1,15 +1,11 @@
-// app/order/page.tsx
+// app/order/OrderClient.tsx
 'use client';
 
 import { useState } from 'react';
 
-export const metadata = {
-  title: 'Вызвать мастера — Делов-на-час',
-};
-
 type Preview = { name: string; url: string; type: string };
 
-export default function OrderPage() {
+export default function OrderClient() {
   const [files, setFiles] = useState<Preview[]>([]);
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -43,12 +39,8 @@ export default function OrderPage() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           <section>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-              Вызвать мастера
-            </h1>
-            <p className="mt-3 text-gray-600">
-              Опишите задачу — заявка прилетит в наш Telegram-чат.
-            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">Вызвать мастера</h1>
+            <p className="mt-3 text-gray-600">Опишите задачу — заявка прилетит в наш Telegram-чат.</p>
 
             <form
               method="post"
