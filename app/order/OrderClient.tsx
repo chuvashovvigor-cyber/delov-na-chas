@@ -10,48 +10,32 @@ type Props = {
   value?: Point;
   onChange?: (p: Point) => void;
   masters?: Array<{ lat: number; lon: number; name?: string }>;
+  city?: string; // <— НОВОЕ: город из селекта
 };
 
-export default function OrderClient({ value, onChange, masters = [] }: Props) {
+export default function OrderClient({
+  value,
+  onChange,
+  masters = [],
+  city = 'Калуга',
+}: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggests, setSuggests] = useState<Suggest[]>([]);
+  const [active, setActive] = useState(0); // индекс подсветки в списке
 
-  /** === КАКИЕ ТАЙЛЫ ИСПОЛЬЗОВАТЬ ===
-   * 'voyager' — современно/цветно (по умолчанию)
-   * 'osm'     — классика OSM Standard (чаще видно номера домов на больших зумах)
-   * 'hot'     — яркая схема HOT (Humanitarian)
-   */
-  const TILE: 'voyager' | 'osm' | 'hot' = 'voyager';
+  // ====== ТАЙЛЫ (современные, цветные) ======
+  const TILE = {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 20,
+  };
 
-  function getTile() {
-    switch (TILE) {
-      case 'osm':
-        return {
-          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 20,
-        };
-      case 'hot':
-        return {
-          url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-          attribution:
-            '&copy; OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France',
-          maxZoom: 20,
-        };
-      default: // 'voyager'
-        return {
-          url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-          attribution: '&copy; OpenStreetMap &copy; CARTO',
-          maxZoom: 20,
-        };
-    }
-  }
-
-  // Чёрная метка пользователя (divIcon)
+  // чёрная метка (divIcon)
   const getUserIcon = (L: any) =>
     L.divIcon({
       className: '',
@@ -61,7 +45,7 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
       iconAnchor: [9, 9],
     });
 
-  // Иконка мастера (машинка-эмодзи)
+  // мастер (машинка-эмодзи)
   const getMasterIcon = (L: any) =>
     L.divIcon({
       className: 'master-icon',
@@ -71,9 +55,9 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
       iconAnchor: [11, 11],
     });
 
+  // инициализация карты
   useEffect(() => {
     let map: any;
-
     (async () => {
       // @ts-expect-error no types
       const L = await import('leaflet');
@@ -84,11 +68,8 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
         : [54.513845, 36.261215]; // Калуга
 
       map = L.map(mapRef.current, { zoomControl: true }).setView(start, 13);
+      L.tileLayer(TILE.url, { attribution: TILE.attribution, maxZoom: TILE.maxZoom }).addTo(map);
 
-      const { url, attribution, maxZoom } = getTile();
-      L.tileLayer(url, { attribution, maxZoom }).addTo(map);
-
-      // пользовательская метка
       markerRef.current = L.marker(start, {
         draggable: true,
         icon: getUserIcon(L),
@@ -98,27 +79,21 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
 
       // клик по карте
       map.on('click', async (e: any) => {
-        const lat = e.latlng.lat;
-        const lon = e.latlng.lng;
-        markerRef.current.setLatLng([lat, lon]);
-        map.panTo([lat, lon]);
-        const addr = await reverseGeocode(lat, lon);
-        onChange?.({ lat, lon, address: addr });
+        await placePoint(e.latlng.lat, e.latlng.lng, true);
       });
 
       // перетаскивание
       markerRef.current.on('dragend', async () => {
         const { lat, lng } = markerRef.current.getLatLng();
-        const addr = await reverseGeocode(lat, lng);
-        onChange?.({ lat, lon: lng, address: addr });
+        await placePoint(lat, lng, true);
       });
 
       // мастера
-      masters.forEach((m) => {
+      masters.forEach((m) =>
         L.marker([m.lat, m.lon], { icon: getMasterIcon(L) })
           .addTo(map)
-          .bindPopup(m.name || 'Мастер');
-      });
+          .bindPopup(m.name || 'Мастер')
+      );
 
       instanceRef.current = { map, L };
     })();
@@ -131,13 +106,14 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // когда value меняется извне — двигаем метку
   useEffect(() => {
     if (!value || !instanceRef.current || !markerRef.current) return;
     markerRef.current.setLatLng([value.lat, value.lon]);
     instanceRef.current.map.panTo([value.lat, value.lon]);
   }, [value]);
 
-  // Поиск с подсказками
+  // ====== ЖИВОЙ ПОИСК (с дебаунсом) ======
   useEffect(() => {
     if (!query.trim()) {
       setSuggests([]);
@@ -146,22 +122,47 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
     const t = setTimeout(async () => {
       setLoading(true);
       try {
+        // сужаем поиск к городу + RU, добавляем детали адреса
+        const q = `${query}, ${city}`;
         const r = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=ru&q=${encodeURIComponent(
-            query
+          `https://nominatim.openstreetmap.org/search?format=json&limit=7&addressdetails=1&accept-language=ru&countrycodes=ru&q=${encodeURIComponent(
+            q
           )}`,
           { headers: { Accept: 'application/json' } }
         );
         const data: Suggest[] = await r.json();
         setSuggests(data);
+        setActive(0);
       } catch {
         setSuggests([]);
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, city]);
+
+  // выбрать подсказку
+  async function pick(s: Suggest) {
+    const lat = parseFloat(s.lat);
+    const lon = parseFloat(s.lon);
+    await placePoint(lat, lon, false, s.display_name);
+    setQuery(s.display_name);
+    setSuggests([]);
+  }
+
+  // поставить точку + (опционально) реверс-геокод
+  async function placePoint(lat: number, lon: number, doReverse = false, presetAddr?: string) {
+    markerRef.current?.setLatLng([lat, lon]);
+    instanceRef.current?.map?.panTo([lat, lon]);
+
+    let address = presetAddr ?? '';
+    if (doReverse && !presetAddr) {
+      address = await reverseGeocode(lat, lon);
+      if (address) setQuery(address);
+    }
+    onChange?.({ lat, lon, address });
+  }
 
   async function reverseGeocode(lat: number, lon: number) {
     try {
@@ -175,14 +176,21 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
     }
   }
 
-  async function pickSuggestion(s: Suggest) {
-    const lat = parseFloat(s.lat);
-    const lon = parseFloat(s.lon);
-    markerRef.current?.setLatLng([lat, lon]);
-    instanceRef.current?.map?.panTo([lat, lon]);
-    setSuggests([]);
-    setQuery(s.display_name);
-    onChange?.({ lat, lon, address: s.display_name });
+  // клавиатурная навигация по списку
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!suggests.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => (i + 1) % suggests.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => (i - 1 + suggests.length) % suggests.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      pick(suggests[active]);
+    } else if (e.key === 'Escape') {
+      setSuggests([]);
+    }
   }
 
   return (
@@ -192,17 +200,20 @@ export default function OrderClient({ value, onChange, masters = [] }: Props) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Начните вводить адрес…"
+          onKeyDown={onKeyDown}
+          placeholder={`Начните вводить адрес… (${city})`}
           className="w-full rounded-xl border px-3 py-2"
         />
         {!!suggests.length && (
-          <div className="absolute z-10 mt-1 w-full rounded-xl border bg-white shadow">
+          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border bg-white shadow">
             {suggests.map((s, i) => (
               <button
-                key={i}
+                key={`${s.lat}-${s.lon}-${i}`}
                 type="button"
-                onClick={() => pickSuggestion(s)}
-                className="block w-full text-left px-3 py-2 hover:bg-gray-50"
+                onClick={() => pick(s)}
+                className={`block w-full text-left px-3 py-2 ${
+                  i === active ? 'bg-gray-100' : 'hover:bg-gray-50'
+                }`}
               >
                 {s.display_name}
               </button>
