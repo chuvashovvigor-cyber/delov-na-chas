@@ -1,31 +1,24 @@
-'use client';
+// app/order/page.tsx
+import dynamic from 'next/dynamic';
 
-import { useState } from 'react';
-import OrderClient from './OrderClient';
+export const metadata = {
+  title: 'Вызвать мастера — Делов-на-час',
+  description: 'Оформите заявку, прикрепите фото/видео и укажите адрес на карте.',
+};
 
-type Preview = { name: string; url: string; type: string };
-type Point = { lat: number; lon: number; address?: string };
+// подключаем карту/клиентскую часть без SSR,
+// чтобы на сервере ничего не трогало window
+const OrderClient = dynamic(() => import('./OrderClient'), {
+  ssr: false,
+  // optional: можно показать заглушку пока грузится карта
+  loading: () => (
+    <div className="mt-6 h-[360px] rounded-2xl border bg-gray-50 grid place-items-center text-gray-500">
+      Загрузка карты…
+    </div>
+  ),
+});
 
 export default function OrderPage() {
-  // город для подсказок и центрирования карты
-  const [city, setCity] = useState('Калуга');
-
-  // адрес/координаты из карты/поиска
-  const [point, setPoint] = useState<Point | null>(null);
-  const [address, setAddress] = useState('');
-
-  // предпросмотр прикреплённых файлов
-  const [files, setFiles] = useState<Preview[]>([]);
-  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = Array.from(e.target.files ?? []);
-    const previews = f.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-      type: file.type,
-    }));
-    setFiles(previews);
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 w-full backdrop-blur bg-white/80 border-b">
@@ -46,112 +39,24 @@ export default function OrderPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Левая колонка — форма */}
           <section>
             <h1 className="text-3xl sm:text-4xl font-bold leading-tight">Вызвать мастера</h1>
             <p className="mt-3 text-gray-600">
               Опишите задачу — заявка прилетит в наш Telegram-чат.
             </p>
 
-            <form
-              method="post"
-              action="/api/order"
-              encType="multipart/form-data"
-              className="mt-8 grid gap-3 max-w-xl"
-            >
-              <input name="name" required placeholder="Ваше имя" className="rounded-xl border px-3 py-2" />
-              <input name="phone" required placeholder="Телефон" className="rounded-xl border px-3 py-2" />
-
-              {/* Адрес: подставляется из карты/поиска, но можно поправить вручную */}
-              <input
-                name="address"
-                placeholder="Адрес"
-                className="rounded-xl border px-3 py-2"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-
-              <textarea
-                name="details"
-                required
-                placeholder="Опишите задачу"
-                rows={4}
-                className="rounded-xl border px-3 py-2"
-              />
-
-              {/* Прикрепление медиа + предпросмотр */}
-              <div className="grid gap-2">
-                <input
-                  id="media"
-                  name="media"
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={onPickFiles}
-                />
-                <label
-                  htmlFor="media"
-                  className="cursor-pointer rounded-2xl border border-dashed bg-white px-4 py-3 text-center hover:bg-gray-50"
-                >
-                  <div className="text-sm font-medium">Прикрепить фото/видео</div>
-                  <div className="text-xs text-gray-500">Можно несколько файлов • до ~20 МБ каждый</div>
-                </label>
-
-                {files.length > 0 && (
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {files.map((f, i) => (
-                      <div key={i} className="rounded-xl border bg-white overflow-hidden">
-                        {f.type.startsWith('image/') ? (
-                          <img src={f.url} alt={f.name} className="h-24 w-full object-cover" />
-                        ) : (
-                          <video src={f.url} className="h-24 w-full object-cover" controls />
-                        )}
-                        <div className="p-1 text-[11px] truncate text-gray-600">{f.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Скрытые поля с координатами из карты */}
-              <input type="hidden" name="lat" value={point?.lat ?? ''} />
-              <input type="hidden" name="lon" value={point?.lon ?? ''} />
-
-              <button className="rounded-2xl bg-gray-900 text-white py-3 hover:bg-black">
-                Отправить заявку
-              </button>
-
-              <p className="text-xs text-gray-500">
-                Отправляя заявку, вы соглашаетесь с условиями обработки персональных данных.
-              </p>
-            </form>
+            {/* Вся «живность» (форма, загрузка медиа, карта, поиск адреса) — внутри OrderClient */}
+            <OrderClient city="Калуга" onChange={() => { /* noop: реальное onChange уже внутри */ }} />
           </section>
 
-          {/* Правая колонка — город / поиск / карта */}
+          {/* Можно добавить любой серверный сайдбар/инфоблок — без доступа к window */}
           <aside className="rounded-3xl border bg-white p-4 shadow-sm">
-            <div className="text-sm font-semibold mb-3">Город</div>
-            <select
-              className="w-full rounded-xl border px-3 py-2 bg-white"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            >
-              <option value="Калуга">Калуга</option>
-              {/* позже добавим другие города */}
-            </select>
-
-            {/* Живой поиск + карта (компонент OrderClient) */}
-            <OrderClient
-              city={city}
-              onChange={(p) => {
-                setPoint({ lat: p.lat, lon: p.lon, address: p.address });
-                if (p.address) setAddress(p.address);
-              }}
-            />
-
-            <div className="mt-4 text-sm text-gray-600">
-              Кликните по карте или перетащите метку — адрес подставится автоматически.
-            </div>
+            <div className="text-sm font-semibold mb-2">Как это работает</div>
+            <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
+              <li>Заполните форму и прикрепите фото/видео.</li>
+              <li>Выберите адрес на карте или через поиск.</li>
+              <li>Мы подтвердим цену и пришлём ETA мастера.</li>
+            </ol>
           </aside>
         </div>
       </main>
