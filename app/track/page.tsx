@@ -1,11 +1,12 @@
 // app/track/page.tsx
 'use client';
 
+// ВАЖНО: revalidate — именно число, без фигурных скобок
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import nextDynamic from 'next/dynamic';          // <<< переименовали импорт
+import nextDynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 
 type Master = {
@@ -16,7 +17,7 @@ type Master = {
   updatedAt: number | null;
 };
 
-// react-leaflet — только на клиенте
+// react-leaflet подключаем только на клиенте
 const MapContainer = nextDynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
 const TileLayer    = nextDynamic(() => import('react-leaflet').then(m => m.TileLayer),    { ssr: false });
 const Marker       = nextDynamic(() => import('react-leaflet').then(m => m.Marker),       { ssr: false });
@@ -30,7 +31,7 @@ export default function TrackPage() {
 
   const center = useMemo(() => ({ lat: 54.506, lon: 36.252 }), []);
 
-  // создаём иконку Leaflet уже после mount
+  // Иконка метки (чёрная) — генерим после mount
   useEffect(() => {
     (async () => {
       const L = (await import('leaflet')).default;
@@ -59,7 +60,9 @@ export default function TrackPage() {
       const res = await fetch('/api/masters/all', { cache: 'no-store', signal: ac.signal });
       const data = (await res.json()) as Master[];
       setMasters(data);
-    } catch {/* ignore */} finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
