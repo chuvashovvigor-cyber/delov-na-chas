@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';          // <<< переименовали импорт
 import 'leaflet/dist/leaflet.css';
 
 type Master = {
@@ -16,22 +16,21 @@ type Master = {
   updatedAt: number | null;
 };
 
-// react-leaflet только на клиенте
-const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
-const TileLayer    = dynamic(() => import('react-leaflet').then(m => m.TileLayer),    { ssr: false });
-const Marker       = dynamic(() => import('react-leaflet').then(m => m.Marker),       { ssr: false });
-const Popup        = dynamic(() => import('react-leaflet').then(m => m.Popup),        { ssr: false });
+// react-leaflet — только на клиенте
+const MapContainer = nextDynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
+const TileLayer    = nextDynamic(() => import('react-leaflet').then(m => m.TileLayer),    { ssr: false });
+const Marker       = nextDynamic(() => import('react-leaflet').then(m => m.Marker),       { ssr: false });
+const Popup        = nextDynamic(() => import('react-leaflet').then(m => m.Popup),        { ssr: false });
 
 export default function TrackPage() {
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
-  const [icon, setIcon] = useState<any>(null); // иконка Leaflet создаётся после монтирования
+  const [icon, setIcon] = useState<any>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Центр — Калуга
   const center = useMemo(() => ({ lat: 54.506, lon: 36.252 }), []);
 
-  // создаём чёрную иконку уже на клиенте (после mount)
+  // создаём иконку Leaflet уже после mount
   useEffect(() => {
     (async () => {
       const L = (await import('leaflet')).default;
@@ -60,8 +59,7 @@ export default function TrackPage() {
       const res = await fetch('/api/masters/all', { cache: 'no-store', signal: ac.signal });
       const data = (await res.json()) as Master[];
       setMasters(data);
-    } catch {/* ignore */} 
-    finally { setLoading(false); }
+    } catch {/* ignore */} finally { setLoading(false); }
   }
 
   useEffect(() => {
@@ -85,17 +83,16 @@ export default function TrackPage() {
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               attribution="&copy; OpenStreetMap &copy; CARTO"
             />
-            {icon &&
-              masters.map((m) => (
-                <Marker key={m.id} position={[m.lat, m.lon]} icon={icon}>
-                  <Popup>
-                    <div className="font-semibold">{m.name}</div>
-                    <div className="text-xs text-gray-600">
-                      {m.updatedAt ? new Date(m.updatedAt).toLocaleTimeString() : 'нет данных'}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+            {icon && masters.map(m => (
+              <Marker key={m.id} position={[m.lat, m.lon]} icon={icon}>
+                <Popup>
+                  <div className="font-semibold">{m.name}</div>
+                  <div className="text-xs text-gray-600">
+                    {m.updatedAt ? new Date(m.updatedAt).toLocaleTimeString() : 'нет данных'}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
           </MapContainer>
         </div>
       </div>
