@@ -1,10 +1,10 @@
 // app/order/page.tsx
 import OrderClient from "./OrderClient";
 
-// Статическая страница нам не нужна, пусть будет динамика (без кэша)
+// Страница динамическая (без SSG, чтобы не висеть на билде)
 export const dynamic = "force-dynamic";
 
 export default function Page() {
-  // НИЧЕГО не передаём пропсами! Все интерактивные штуки внутри OrderClient.
+  // НИЧЕГО не передаём пропсами!
   return <OrderClient />;
 }
