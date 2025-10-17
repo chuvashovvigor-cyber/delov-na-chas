@@ -5,8 +5,9 @@ export const metadata = {
   title: "Вызвать мастера — Делов-на-час",
 };
 
-const OrderClient = dynamic(() => import("./OrderClient"), { ssr: false });
+// ВАЖНО: импортируем НОВЫЙ компонент ./Client, а не OrderClient
+const Client = dynamic(() => import("./Client"), { ssr: false });
 
 export default function Page() {
-  return <OrderClient />;
+  return <Client />;
 }
