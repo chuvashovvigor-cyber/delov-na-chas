@@ -1,10 +1,12 @@
 // app/order/page.tsx
-import OrderClient from "./OrderClient";
+import dynamic from "next/dynamic";
 
-// Страница динамическая (без SSG, чтобы не висеть на билде)
-export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "Вызвать мастера — Делов-на-час",
+};
+
+const OrderClient = dynamic(() => import("./OrderClient"), { ssr: false });
 
 export default function Page() {
-  // НИЧЕГО не передаём пропсами!
   return <OrderClient />;
 }
