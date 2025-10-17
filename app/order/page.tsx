@@ -1,10 +1,10 @@
 // app/order/page.tsx
-import OrderClient from './OrderClient';
+import OrderClient from "./OrderClient";
 
-export const metadata = {
-  title: 'Вызвать мастера — Делов-на-час',
-};
+// Статическая страница нам не нужна, пусть будет динамика (без кэша)
+export const dynamic = "force-dynamic";
 
 export default function Page() {
-  return <OrderClient />; // НИКАКИХ пропсов
+  // НИЧЕГО не передаём пропсами! Все интерактивные штуки внутри OrderClient.
+  return <OrderClient />;
 }
