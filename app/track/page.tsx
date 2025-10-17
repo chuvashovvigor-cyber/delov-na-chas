@@ -1,10 +1,9 @@
 // app/track/page.tsx
 export const dynamic = 'force-dynamic';
-export const revalidate = 0; // <- именно число 0 (или false), не объект
+export const revalidate = 0;
 
-import TrackClient from './TrackClient';
+import Client from './client';
 
 export default function Page() {
-  // серверный компонент-обёртка: никаких браузерных API здесь
-  return <TrackClient />;
+  return <Client />;
 }
