@@ -1,4 +1,3 @@
-// app/order/Client.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,10 +6,8 @@ import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 type LatLng = [number, number];
-
 const KALUGA_CENTER: LatLng = [54.513845, 36.261215];
 
-// Чёрная красивая метка (SVG)
 const blackPin = L.icon({
   iconUrl:
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="black"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>',
@@ -48,7 +45,6 @@ function DraggableMarker({
 }
 
 export default function Client() {
-  // НИКАКИХ пропсов, только локальное состояние
   const [city, setCity] = useState("Калуга");
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<
@@ -58,7 +54,6 @@ export default function Client() {
   const [pos, setPos] = useState<LatLng>(KALUGA_CENTER);
   const [address, setAddress] = useState("");
 
-  // живой поиск Nominatim c дебаунсом
   useEffect(() => {
     const t = setTimeout(async () => {
       const q = query.trim();
@@ -129,7 +124,6 @@ export default function Client() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Форма */}
           <section>
             <h1 className="text-3xl sm:text-4xl font-bold leading-tight">Вызвать мастера</h1>
             <p className="mt-3 text-gray-600">Опишите задачу — заявка улетит в наш Telegram-чат.</p>
@@ -145,7 +139,6 @@ export default function Client() {
                 className="rounded-xl border px-3 py-2"
               />
               <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
-
               <div className="grid gap-2">
                 <input id="media" name="media" type="file" multiple accept="image/*,video/*" className="hidden" />
                 <label htmlFor="media" className="cursor-pointer rounded-2xl border border-dashed bg-white px-4 py-3 text-center hover:bg-gray-50">
@@ -153,15 +146,12 @@ export default function Client() {
                   <div className="text-xs text-gray-500">Можно несколько файлов • до ~20 МБ каждый</div>
                 </label>
               </div>
-
               <button className="rounded-2xl bg-gray-900 text-white py-3 hover:bg-black">Отправить заявку</button>
-
               <input type="hidden" name="lat" value={pos[0]} />
               <input type="hidden" name="lon" value={pos[1]} />
             </form>
           </section>
 
-          {/* Город, поиск, карта */}
           <aside className="rounded-3xl border bg-white p-4 shadow-sm">
             <div className="text-sm font-semibold mb-2">Город</div>
             <select className="w-full rounded-xl border px-3 py-2 bg-white" value={city} onChange={(e) => setCity(e.target.value)}>
@@ -171,7 +161,7 @@ export default function Client() {
             <div className="mt-4">
               <div className="text-sm font-semibold mb-2">Адрес/поиск</div>
 
-              {/* ВАЖНО: relative/z-index, чтобы список был НАД картой */}
+              {/* z-index чтобы подсказки были НАД картой */}
               <div className="relative z-20">
                 <input
                   value={query}
