@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 
 // —–––––––––––––  настройки рендера (разрешаем клиенту и отключаем кеш) –––––––––––––
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = false;
 
 // Типы
 type Master = {
