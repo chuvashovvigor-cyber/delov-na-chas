@@ -15,81 +15,65 @@ async function send(chatId: number | string, text: string, extra?: any) {
   });
 }
 
-async function saveMasterLocation(opts: { id: number | string; lat: number; lon: number; name?: string }) {
-  const id = String(opts.id);
-
-  // GEO-индекс
-  await redis.geoadd(GEO_KEY, { longitude: opts.lon, latitude: opts.lat, member: id });
-
-  // мета + TTL (исчезает, если мастер перестал слать координаты)
-  await redis.set(
-    META_KEY(id),
-    JSON.stringify({ id, name: opts.name || 'Мастер', updatedAt: Date.now() }),
-    { ex: MASTER_TTL_SEC }
-  );
-}
-
 export async function POST(req: Request) {
   const update = await req.json();
 
   try {
-    const text: string | undefined = update.message?.text;
-    const chatId = update.message?.chat?.id;
-    const whoName: string | undefined =
-      update.message?.from?.first_name ?? update.callback_query?.from?.first_name;
+    const msg = update.message ?? update.edited_message; // live-location приходит как edited_message
+    const text: string | undefined = msg?.text;
+    const chatId = msg?.chat?.id;
+    const user = msg?.from;
 
-    if (text === '/chatid') {
+    // 1) GEO-обновления
+    const loc = msg?.location;
+    if (loc && chatId) {
+      const lon = Number(loc.longitude);
+      const lat = Number(loc.latitude);
+      const id = String(chatId);
+
+      // сохраняем точку в GEO
+      await (redis as any).geoadd(GEO_KEY, { longitude: lon, latitude: lat, member: id });
+
+      // мета + TTL (имя, updatedAt)
+      const meta = {
+        name: [user?.first_name, user?.last_name].filter(Boolean).join(' ') || `Мастер ${id}`,
+        updatedAt: Date.now(),
+      };
+      await redis.set(META_KEY(id), JSON.stringify(meta), { ex: MASTER_TTL_SEC });
+
+      // уведомим админа “втихую”
+      if (ADMIN_CHAT_ID) {
+        await send(ADMIN_CHAT_ID, `📍 <b>${meta.name}</b>\nlat: ${lat}\nlon: ${lon}`);
+      }
+
+      return Response.json({ ok: true });
+    }
+
+    // 2) Команды
+    if (text === '/chatid' && chatId) {
       await send(chatId, `chat_id этой беседы: <code>${chatId}</code>`);
       return Response.json({ ok: true });
     }
 
-    // Разовая локация
-    if (update.message?.location) {
-      const { latitude, longitude, live_period } = update.message.location;
-
-      await saveMasterLocation({ id: chatId, lat: latitude, lon: longitude, name: whoName });
-      await send(
-        ADMIN_CHAT_ID,
-        `📍 Геопозиция от ${whoName ?? chatId}:\nlat: ${latitude}\nlon: ${longitude}${
-          live_period ? `\n(live ${live_period}s)` : ''
-        }`
-      );
-      await send(chatId, `Ок, позиция принята ✅`);
-      return Response.json({ ok: true });
-    }
-
-    // Обновления Live Location приходят как edited_message.location
-    if (update.edited_message?.location) {
-      const { latitude, longitude } = update.edited_message.location;
-      const liveChatId = update.edited_message.chat?.id;
-
-      await saveMasterLocation({
-        id: liveChatId,
-        lat: latitude,
-        lon: longitude,
-        name: update.edited_message?.from?.first_name,
-      });
-      return Response.json({ ok: true });
-    }
-
-    if (text === '/start') {
+    if (text === '/start' && chatId) {
       await send(
         chatId,
         [
           `Привет! Я бот «Делов-на-час».`,
           ``,
           `Команды:`,
-          `/status — выбрать статус`,
-          `/location — разовая геопозиция`,
-          `/onshift — начать смену (включить Live Location)`,
-          `/offshift — завершить смену (убрать метку с карты)`,
+          `/status — выставить статус`,
+          `/location — отправить геопозицию`,
           `/chatid — показать id чата`,
-        ].join('\n')
+          ``,
+          `Для «живого» трекинга включи в Telegram «Поделиться геопозицией в реальном времени»:`,
+          `Крепёж → Местоположение → Поделиться геопозицией в реальном времени.`,
+        ].join('\n'),
       );
       return Response.json({ ok: true });
     }
 
-    if (text === '/status') {
+    if (text === '/status' && chatId) {
       await fetch(`${API}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,13 +93,13 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    if (text === '/location') {
+    if (text === '/location' && chatId) {
       await fetch(`${API}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: 'Нажмите кнопку ниже и отправьте геопозицию.',
+          text: 'Нажмите кнопку ниже, чтобы отправить геопозицию.',
           reply_markup: {
             keyboard: [[{ text: 'Отправить геопозицию', request_location: true }]],
             resize_keyboard: true,
@@ -126,31 +110,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    if (text === '/onshift') {
-      await send(
-        chatId,
-        [
-          '👇 Как включить «живую» геолокацию:',
-          '1) Нажмите скрепку / «+»',
-          '2) Выберите «Геопозиция»',
-          '3) «Поделиться геопозицией в реальном времени» и укажите время (например, 8 ч)',
-          '',
-          'Пока Live Location активна — метка на карте будет обновляться автоматически.',
-        ].join('\n')
-      );
-      return Response.json({ ok: true });
-    }
-
-    if (text === '/offshift') {
-      if (chatId) {
-        await redis.del(META_KEY(String(chatId)));
-        await redis.zrem(GEO_KEY, String(chatId)); // убрать из GEO
-      }
-      await send(chatId, 'Смена завершена. Метка скрыта с карты ✅');
-      await send(ADMIN_CHAT_ID, `🔴 ${whoName ?? chatId} завершил(а) смену`);
-      return Response.json({ ok: true });
-    }
-
+    // inline-кнопки статусов
     if (update.callback_query?.data?.startsWith('status:')) {
       const status = update.callback_query.data.split(':')[1];
       const who = update.callback_query.from?.first_name || 'мастер';
@@ -159,21 +119,22 @@ export async function POST(req: Request) {
       await fetch(`${API}/answerCallbackQuery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ callback_query_id: update.callback_query.id, text: 'Обновлено' }),
+        body: JSON.stringify({ callback_query_id: update.callback_query.id, text: 'Ок' }),
       });
       return Response.json({ ok: true });
     }
 
+    // просто пробрасываем текст админу
     if (text && chatId) {
       await send(ADMIN_CHAT_ID, `📩 Сообщение от ${chatId}:\n${text}`);
     }
 
     return Response.json({ ok: true });
   } catch {
-    return new Response('error', { status: 200 });
+    // Возвращаем 200, чтобы TG не ретраил
+    return new Response('ok', { status: 200 });
   }
 }
 
-// для setWebhook
 export async function GET()  { return new Response('ok', { status: 200 }); }
 export async function HEAD() { return new Response(null, { status: 200 }); }
