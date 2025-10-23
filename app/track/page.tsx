@@ -4,8 +4,6 @@ export const dynamic = 'force-dynamic' as const;
 export const fetchCache = 'force-no-store' as const;
 
 import NextDynamic from 'next/dynamic';
-
-// строго этот путь и регистр!
 const TrackMap = NextDynamic(() => import('./TrackMap'), { ssr: false });
 
 export default function TrackPage() {
