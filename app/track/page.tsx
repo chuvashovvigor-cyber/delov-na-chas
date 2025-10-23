@@ -1,16 +1,12 @@
 'use client';
 
-// Гарантируем динамический рендер (никакого пререндеринга на билде)
 export const dynamic = 'force-dynamic' as const;
 export const fetchCache = 'force-no-store' as const;
 
-// ⚠️ ВАЖНО: НЕ экспортируй здесь `revalidate` вообще.
-// Даже не косвенно через re-export. И не держи переменных с таким именем.
+import dynamic from 'next/dynamic';
 
-import dynamicImport from 'next/dynamic';
-
-// Карту рендерим только на клиенте (без SSR)
-const TrackMap = dynamicImport(() => import('./TrackMap'), { ssr: false });
+// строго этот путь и регистр!
+const TrackMap = dynamic(() => import('./TrackMap'), { ssr: false });
 
 export default function TrackPage() {
   return (
