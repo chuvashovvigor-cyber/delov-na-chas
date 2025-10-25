@@ -5,9 +5,8 @@ import dynamic from 'next/dynamic';
 export const revalidate = 0;
 
 // динамический импорт карты без SSR
-const MapWithMasters = dynamic(() => import('@/components/map/MapWithMasters'), {
-  ssr: false,
-});
+import dynamic from 'next/dynamic';
+const MapWithMasters = dynamic(() => import('../components/map/MapWithMasters'), { ssr: false });
 
 export default function LandingPage() {
   return (
