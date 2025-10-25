@@ -1,19 +1,17 @@
 // app/track/page.tsx
 'use client';
 
-import dynamic from 'next/dynamic';
-
+// спец-экспорты Next.js (ок, имя именно такое)
 export const dynamic = 'force-dynamic' as const;
 export const fetchCache = 'force-no-store' as const;
 
-// ВАРИАНТ 1 (без алиасов) — работает всегда:
-const MapWithMasters = dynamic(
+import NextDynamic from 'next/dynamic';
+
+// важное: из /app/track/ до /components/map — два уровня вверх
+const MapWithMasters = NextDynamic(
   () => import('../../components/map/MapWithMasters'),
   { ssr: false }
 );
-
-// // ВАРИАНТ 2 (если у тебя настроен алиас "@/"):
-// const MapWithMasters = dynamic(() => import('@/components/map/MapWithMasters'), { ssr: false });
 
 export default function TrackPage() {
   return (
