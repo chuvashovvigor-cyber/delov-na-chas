@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'делов-на-час',
-  description: 'Мастер на час и отделочные работы в Калуге',
+  description: 'Ваш мастер в Калуге',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
