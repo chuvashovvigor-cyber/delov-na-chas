@@ -1,0 +1,21 @@
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовые правки для тёмной темы и карты */
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+.leaflet-container {
+  background: transparent;
+}
+
+/* Сглаживание шрифтов */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
