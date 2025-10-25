@@ -2,35 +2,42 @@
 
 import { useEffect, useState } from 'react';
 
+/**
+ * Кнопка переключения темы (day/night).
+ * Работает через класс 'dark' на <html> и localStorage('theme')
+ */
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // стартовое состояние из html
-    setDark(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
-    if (dark) root.classList.add('dark');
-    else root.classList.remove('dark');
-  }, [dark, mounted]);
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? saved === 'dark' : prefersDark;
+
+    root.classList.toggle('dark', isDark);
+    setDark(isDark);
+  }, []);
 
   if (!mounted) return null;
 
+  const toggle = () => {
+    const root = document.documentElement;
+    const next = !dark;
+    root.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+    setDark(next);
+  };
+
   return (
     <button
-      onClick={() => setDark((v) => !v)}
-      className="inline-flex items-center gap-2 rounded-xl px-3 py-2
-                 bg-gradient-to-r from-blue-500 to-indigo-600 text-white
-                 shadow hover:shadow-md active:scale-[0.98] transition"
+      onClick={toggle}
+      className="rounded-xl px-3 py-2 text-sm font-medium bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-md active:scale-[.98] transition"
       aria-label="Переключить тему"
-      type="button"
     >
-      {dark ? 'Темная' : 'Светлая'}
+      {dark ? 'Ночь' : 'День'}
     </button>
   );
 }
