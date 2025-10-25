@@ -1,17 +1,15 @@
-import type { Metadata } from 'next'
-import '../styles/globals.css'
+// app/layout.tsx
+import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'Делов-на-час',
-  description:
-    'Фикс-цены, быстрые заявки, подписки для физ и юр лиц. Живой трекинг мастера — как в такси.',
-  icons: [{ rel: 'icon', url: '/favicon.ico' }],
-}
+export const metadata = {
+  title: 'делов-на-час',
+  description: 'Мастер на час в Калуге',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
-      <body>{children}</body>
+    <html lang="ru" className="dark">
+      <body className="bg-zinc-950 text-zinc-100 antialiased">{children}</body>
     </html>
-  )
+  );
 }
