@@ -1,88 +1,55 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import type { LatLngExpression } from 'leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useMemo } from "react";
+import useSWR from "swr";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-type MasterPoint = {
-  id: string;
-  lat: number;
-  lon: number;
-  updatedAt?: number;
-};
+type Props = { height?: string; city?: string };
 
-const KALUGA: LatLngExpression = [54.5138, 36.2612];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const blackPin = new L.Icon({
+const masterIcon = L.icon({
   iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  shadowSize: [41, 41],
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='black'>
+         <path d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'/>
+       </svg>`
+    ),
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
 });
 
-export default function MapWithMasters({ height = '420px' }: { height?: string }) {
-  const [masters, setMasters] = useState<MasterPoint[] | null>(null);
+export default function MapWithMasters({ height = "320px", city = "Калуга" }: Props) {
+  const { data } = useSWR<{ center: [number, number]; members: string[] }>(
+    `/api/masters/all?city=${encodeURIComponent(city)}`,
+    fetcher,
+    { refreshInterval: 5000, revalidateOnFocus: true }
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const res = await fetch('/api/masters/all', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data: MasterPoint[] = await res.json();
-        if (!cancelled) setMasters(data);
-      } catch {}
-    }
-
-    load();
-    const t = setInterval(load, 5000);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
-  }, []);
-
-  const bounds = useMemo(() => {
-    if (!masters || masters.length === 0) return null;
-    return L.latLngBounds(masters.map((m) => [m.lat, m.lon] as [number, number]));
-  }, [masters]);
+  const center = data?.center ?? [54.5138, 36.2612]; // Калуга дефолт
+  const positions = useMemo<[number, number][]>(() => {
+    if (!data?.members) return [];
+    // ожидаем members как ["lon,lat", "..."]; меняем на [lat, lon]
+    return data.members
+      .map((s) => s.split(",").map((n) => Number(n.trim())) as [number, number])
+      .filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
+      .map(([lon, lat]) => [lat, lon]);
+  }, [data?.members]);
 
   return (
-    <div style={{ height, width: '100%', borderRadius: 16, overflow: 'hidden' }}>
-      <MapContainer
-        center={KALUGA}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom
-        preferCanvas
-        bounds={bounds ?? undefined}
-        boundsOptions={{ padding: [40, 40] }}
-      >
+    <div style={{ height }} className="w-full overflow-hidden rounded-2xl">
+      <MapContainer center={center as any} zoom={13} style={{ height: "100%", width: "100%" }}>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution="&copy; OpenStreetMap &copy; CARTO"
+          attribution='&copy; OpenStreetMap, &copy; CARTO'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-
-        {(masters ?? []).map((m) => (
-          <Marker key={m.id} position={[m.lat, m.lon]} icon={blackPin}>
-            <Popup>
-              <div className="text-sm">
-                <div className="font-semibold">Мастер {m.id}</div>
-                {m.updatedAt ? (
-                  <div className="text-gray-600">
-                    Обновлено: {new Date(m.updatedAt).toLocaleTimeString()}
-                  </div>
-                ) : null}
-                <div className="text-gray-600">lat: {m.lat.toFixed(5)}</div>
-                <div className="text-gray-600">lon: {m.lon.toFixed(5)}</div>
-              </div>
-            </Popup>
+        {positions.map(([lat, lon], idx) => (
+          <Marker key={idx} position={[lat, lon]} icon={masterIcon}>
+            <Popup>Мастер #{idx + 1}</Popup>
           </Marker>
         ))}
       </MapContainer>
