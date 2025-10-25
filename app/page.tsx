@@ -1,12 +1,12 @@
 // app/page.tsx
 import dynamic from "next/dynamic";
 
-// клиентские куски грузим динамически
-const ThemeToggle = dynamic(() => import("@/components/ui/ThemeToggle"), { ssr: false });
-const NameTicker  = dynamic(() => import("@/components/ui/NameTicker"), { ssr: false });
-const MapWithMasters = dynamic(() => import("@/components/map/MapWithMasters"), { ssr: false });
-
 export const revalidate = 0;
+
+// ✅ файлы лежат в app/components/...
+const ThemeToggle  = dynamic(() => import("@/app/components/ui/ThemeToggle"), { ssr: false });
+const NameTicker   = dynamic(() => import("@/app/components/ui/NameTicker"), { ssr: false });
+const MapWithMasters = dynamic(() => import("@/app/components/map/MapWithMasters"), { ssr: false });
 
 // общие классы для «красивых градиентных» кнопок
 const btn =
