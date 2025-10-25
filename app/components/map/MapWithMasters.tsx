@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
-import useSWR from 'swr';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -23,17 +22,41 @@ type Props = {
   zoom?: number;
 };
 
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((r) => r.json());
+type Master = { id: string; lat: number; lon: number; status?: string };
 
 export default function MapWithMasters({
   height = '420px',
   center = KALUGA_CENTER,
   zoom = 13,
 }: Props) {
-  const { data } = useSWR('/api/masters/all', fetcher, { refreshInterval: 5000 });
+  const [masters, setMasters] = useState<Master[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const masters =
-    (data?.items as Array<{ id: string; lat: number; lon: number; status?: string }>) ?? [];
+  // Поллинг без SWR
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const load = async () => {
+      try {
+        const res = await fetch('/api/masters/all', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load masters');
+        const data = await res.json();
+        if (!cancelled) setMasters((data?.items as Master[]) ?? []);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? 'Error');
+      }
+    };
+
+    // Первичная загрузка и интервал 5с
+    load();
+    timer = setInterval(load, 5000);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border bg-white">
@@ -49,13 +72,25 @@ export default function MapWithMasters({
             url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap, &copy; CARTO"
           />
+
           {masters.map((m) => (
             <Marker key={m.id} position={[m.lat, m.lon]} icon={masterIcon}>
-              <Popup>Мастер {m.id}</Popup>
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-semibold">Мастер {m.id}</div>
+                  {m.status && <div className="text-gray-600">Статус: {m.status}</div>}
+                </div>
+              </Popup>
             </Marker>
           ))}
         </MapContainer>
       </div>
+
+      {error && (
+        <div className="p-2 text-xs text-red-600 border-t bg-red-50">
+          Ошибка загрузки: {error}
+        </div>
+      )}
     </div>
   );
 }
