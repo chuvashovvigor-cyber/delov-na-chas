@@ -1,133 +1,131 @@
 // app/page.tsx
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
+
+import ThemeToggle from '../components/ui/ThemeToggle';
+import NameTicker from '../components/ui/NameTicker';
+
+// карта мастеров (динамический импорт без SSR)
+const MapWithMasters = dynamic(
+  () => import('../components/map/MapWithMasters'),
+  { ssr: false }
+);
 
 export const revalidate = 0;
 
-// ⬇️ Импорты строго относительными путями из /app
-const ThemeToggle    = dynamic(() => import("./components/ui/ThemeToggle"), { ssr: false });
-const NameTicker     = dynamic(() => import("./components/ui/NameTicker"), { ssr: false });
-const MapWithMasters = dynamic(() => import("./components/map/MapWithMasters"), { ssr: false });
-
-// общие классы для градиентных кнопок
-const btn =
-  "inline-flex items-center justify-center rounded-2xl px-5 py-3 font-medium text-white " +
-  "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 " +
-  "shadow-[0_10px_20px_rgba(59,130,246,.25)] " +
-  "transition-all duration-200 hover:shadow-[0_14px_28px_rgba(59,130,246,.35)] hover:-translate-y-0.5 active:translate-y-0 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-400/60";
-
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100">
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur transition-colors duration-300 dark:border-gray-800 dark:bg-gray-900/70">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="min-w-0">
-            <a href="#services" className={`${btn} px-4 py-2 text-sm`}>Услуги</a>
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100">
+      {/* ШАПКА */}
+      <header className="sticky top-0 z-40 w-full backdrop-blur bg-white/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 grid grid-cols-3 items-center">
+          {/* слева */}
+          <div className="justify-self-start">
+            <a
+              href="#services"
+              className="rounded-xl px-3 py-2 text-sm font-medium bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-md active:scale-[.98] transition"
+            >
+              Услуги
+            </a>
           </div>
-          <div className="pointer-events-none absolute inset-x-0 mx-auto w-full max-w-7xl">
-            <div className="flex h-16 items-center justify-center">
-              <span className="pointer-events-auto select-none text-base font-semibold tracking-wide lowercase">
-                делов-на-час
-              </span>
-            </div>
+
+          {/* центр */}
+          <div className="justify-self-center font-semibold lowercase">
+            делов-на-час
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* справа */}
+          <div className="justify-self-end flex items-center gap-2">
             <ThemeToggle />
-            <a href="#order" className={`${btn} px-4 py-2 text-sm`}>Вызвать мастера</a>
+            <a
+              href="#order"
+              className="rounded-xl px-3 py-2 text-sm font-medium bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-md active:scale-[.98] transition"
+            >
+              Вызвать мастера
+            </a>
           </div>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="bg-gradient-to-b from-white to-gray-50 py-8 transition-colors duration-300 dark:from-gray-950 dark:to-gray-900">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* инфо-баннеры */}
-          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-16 rounded-2xl border bg-white/80 shadow-sm transition-all duration-200 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/80"
-              />
-            ))}
-          </div>
-
-          {/* заголовок */}
-          <div className="mx-auto mt-8 max-w-3xl text-center">
-            <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+      {/* ХИРО */}
+      <section className="bg-gradient-to-b from-white to-gray-50 dark:from-zinc-950 dark:to-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14 grid lg:grid-cols-2 gap-8 items-center">
+          <div className="text-center lg:text-left">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
               Мастер на час и отделочные работы в Калуге
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-balance text-gray-600 dark:text-gray-300">
-              Фикс-цены, быстрые заявки, подписки для частных лиц и бизнеса. Живой трекинг мастера — как в такси.
-            </p>
 
-            {/* индикаторы (ровно, в линию) */}
-            <div className="mx-auto mt-5 flex w-full max-w-md items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-300">
-              {["Фикс-цена до выезда", "Приоритет по подписке"].map((label) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span className="relative inline-flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,.8)]" />
-                  </span>
-                  {label}
-                </div>
-              ))}
+            {/* зелёные индикаторы в одну линию */}
+            <div className="mt-5 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-600 dark:text-zinc-300">
+              {['Фикс-цена до выезда', 'Приоритет по подписке', 'Оплата на месте'].map(
+                (label) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]" />
+                    </span>
+                    {label}
+                  </div>
+                )
+              )}
             </div>
 
-            {/* две кнопки в линию */}
-            <div className="mx-auto mt-6 flex w-full max-w-md items-center justify-center gap-3">
-              <a href="#order" className={btn}>Рассчитать и вызвать</a>
-              <a href="#subscription" className={btn}>Оформить подписку</a>
+            {/* кнопки в одну линию */}
+            <div className="mt-6 flex items-center justify-center lg:justify-start gap-3">
+              <a
+                href="#order"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-lg active:scale-[.98] transition"
+              >
+                Рассчитать и вызвать
+              </a>
+              <a
+                href="#subscription"
+                className="px-5 py-3 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 shadow-sm active:scale-[.98] transition"
+              >
+                Оформить подписку
+              </a>
             </div>
           </div>
 
-          {/* превью карты */}
-          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-3xl border bg-white/80 p-4 shadow-sm transition dark:border-gray-800 dark:bg-gray-900/70">
-              <div className="overflow-hidden rounded-2xl">
-                <MapWithMasters height="260px" />
+          {/* превью карточка с мини-картой */}
+          <div className="relative">
+            <div className="rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+              {/* тут была заглушка — теперь настоящая мини-карта */}
+              <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl">
+                <MapWithMasters height="100%" />
               </div>
+
               <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-                <div className="rounded-xl border bg-white/85 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Статус</div>
+                <div className="rounded-xl bg-gray-50 dark:bg-zinc-800 p-3 border border-zinc-200 dark:border-zinc-700">
+                  <div className="text-xs text-gray-500 dark:text-zinc-400">Статус</div>
                   <div className="font-semibold">Поиск мастера</div>
                 </div>
-                <div className="rounded-xl border bg-white/85 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">ETA</div>
+                <div className="rounded-xl bg-gray-50 dark:bg-zinc-800 p-3 border border-zinc-200 dark:border-zinc-700">
+                  <div className="text-xs text-gray-500 dark:text-zinc-400">ETA</div>
                   <div className="font-semibold">3–5 мин</div>
                 </div>
-                <div className="rounded-xl border bg-white/85 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Мастер</div>
+                <div className="rounded-xl bg-gray-50 dark:bg-zinc-800 p-3 border border-zinc-200 dark:border-zinc-700">
+                  <div className="text-xs text-gray-500 dark:text-zinc-400">Мастер</div>
                   <div className="font-semibold">
-                    <NameTicker names={["Саша", "Игорь", "Михаил", "Дмитрий", "Андрей"]} />
+                    <NameTicker names={['Саша', 'Игорь', 'Максим', 'Антон']} /> · ★4.9
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* мини-калькулятор */}
-            <div className="rounded-3xl border bg-white/80 p-4 shadow-sm transition dark:border-gray-800 dark:bg-gray-900/70">
-              <div className="text-sm font-semibold">Мини-калькулятор</div>
-              <div className="mt-3 grid gap-2">
-                <select className="w-full rounded-xl border bg-white/90 px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
-                  <option>Выберите категорию</option>
-                  <option>Электрика</option>
-                  <option>Сантехника</option>
-                  <option>Сборка</option>
-                  <option>Отделка</option>
-                  <option>Демонтаж</option>
-                </select>
-                <input className="w-full rounded-xl border bg-white/90 px-3 py-2 dark:border-gray-800 dark:bg-gray-900" placeholder="Что сделать?" />
-                <input className="w-full rounded-xl border bg-white/90 px-3 py-2 dark:border-gray-800 dark:bg-gray-900" placeholder="Кол-во / м²" />
-                <button className={btn}>Рассчитать</button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ниже секции (доверяют/услуги/подписка/форма/футер) — оставляю как в предыдущем варианте */}
-      {/* ... */}
+      {/* НОВАЯ СЕКЦИЯ: ЖИВАЯ КАРТА МАСТЕРОВ */}
+      <section id="live-map" className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold mb-4">Мастера рядом</h2>
+          <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <MapWithMasters height="420px" />
+          </div>
+        </div>
+      </section>
+
+      {/* НИЖЕ оставь свои секции услуг/кейсов/подписок/формы как было */}
     </div>
   );
 }
