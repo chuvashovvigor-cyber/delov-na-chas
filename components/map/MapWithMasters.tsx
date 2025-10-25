@@ -1,55 +1,63 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import useSWR from "swr";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L, { LatLngExpression, Icon } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-type Props = { height?: string; city?: string };
+type MasterPoint = { id: string; lat: number; lon: number };
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-const masterIcon = L.icon({
-  iconUrl:
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='black'>
-         <path d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z'/>
-       </svg>`
-    ),
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
-});
-
-export default function MapWithMasters({ height = "320px", city = "Калуга" }: Props) {
-  const { data } = useSWR<{ center: [number, number]; members: string[] }>(
-    `/api/masters/all?city=${encodeURIComponent(city)}`,
-    fetcher,
-    { refreshInterval: 5000, revalidateOnFocus: true }
+// Чёрная метка (SVG data URL)
+const blackPinSvg =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="black">
+      <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+    </svg>`
   );
 
-  const center = data?.center ?? [54.5138, 36.2612]; // Калуга дефолт
-  const positions = useMemo<[number, number][]>(() => {
-    if (!data?.members) return [];
-    // ожидаем members как ["lon,lat", "..."]; меняем на [lat, lon]
-    return data.members
-      .map((s) => s.split(",").map((n) => Number(n.trim())) as [number, number])
-      .filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
-      .map(([lon, lat]) => [lat, lon]);
-  }, [data?.members]);
+const masterIcon: Icon = L.icon({
+  iconUrl: blackPinSvg,
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -26],
+});
+
+export default function MapWithMasters({ height = '420px' }: { height?: string }) {
+  const [points, setPoints] = useState<MasterPoint[]>([]);
+  const center = useMemo<LatLngExpression>(() => [54.513845, 36.261215], []); // Калуга
+
+  useEffect(() => {
+    let stop = false;
+
+    const load = async () => {
+      try {
+        const res = await fetch('/api/masters/all', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data: { members: string[] } = await res.json();
+        const parsed: MasterPoint[] = (data?.members ?? []).map((raw, idx) => {
+          const [lngStr, latStr] = raw.split(',').map((s) => s.trim());
+          return { id: String(idx + 1), lat: Number(latStr), lon: Number(lngStr) };
+        });
+        if (!stop) setPoints(parsed);
+      } catch {}
+    };
+
+    load();
+    const id = setInterval(load, 5000);
+    return () => { stop = true; clearInterval(id); };
+  }, []);
 
   return (
-    <div style={{ height }} className="w-full overflow-hidden rounded-2xl">
-      <MapContainer center={center as any} zoom={13} style={{ height: "100%", width: "100%" }}>
+    <div className="w-full rounded-2xl overflow-hidden border bg-white dark:bg-gray-900">
+      <MapContainer center={center} zoom={13} style={{ height }} scrollWheelZoom className="z-0">
         <TileLayer
-          attribution='&copy; OpenStreetMap, &copy; CARTO'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap & CARTO"
         />
-        {positions.map(([lat, lon], idx) => (
-          <Marker key={idx} position={[lat, lon]} icon={masterIcon}>
-            <Popup>Мастер #{idx + 1}</Popup>
+        {points.map(({ id, lat, lon }) => (
+          <Marker key={id} position={[lat, lon]} icon={masterIcon}>
+            <Popup>Мастер {id}</Popup>
           </Marker>
         ))}
       </MapContainer>
