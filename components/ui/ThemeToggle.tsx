@@ -2,10 +2,6 @@
 
 import { useEffect, useState } from 'react';
 
-/**
- * Кнопка переключения темы (day/night).
- * Работает через класс 'dark' на <html> и localStorage('theme')
- */
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   const [dark, setDark] = useState(false);
@@ -16,7 +12,6 @@ export default function ThemeToggle() {
     const saved = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const isDark = saved ? saved === 'dark' : prefersDark;
-
     root.classList.toggle('dark', isDark);
     setDark(isDark);
   }, []);
