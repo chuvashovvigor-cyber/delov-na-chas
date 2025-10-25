@@ -1,41 +1,42 @@
 // app/page.tsx
-import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import Link from "next/link";
+import dynamic from "next/dynamic";
 
 export const revalidate = 0;
 
-// динамический импорт карты без SSR
-import dynamic from 'next/dynamic';
-const MapWithMasters = dynamic(() => import('../components/map/MapWithMasters'), { ssr: false });
+// карта мастеров (динамический импорт БЕЗ SSR)
+// ВАЖНО: относительный путь, а не "@/..."
+const MapWithMasters = dynamic(
+  () => import("../components/map/MapWithMasters"),
+  { ssr: false }
+);
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
-      {/* ШАПКА: сетка из 3 колонок, чтобы бренд был строго по центру */}
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/70 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 grid grid-cols-3 items-center">
-          {/* слева — Услуги */}
-          <div className="flex items-center">
-            <a
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      {/* Шапка */}
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* слева */}
+          <nav className="flex items-center gap-3 text-sm">
+            <Link
               href="#services"
-              className="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md hover:opacity-90 active:scale-95 transition"
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 hover:bg-zinc-800 transition"
             >
               Услуги
-            </a>
-          </div>
-
-          {/* центр — бренд маленькими буквами */}
-          <div className="text-center">
-            <Link href="/" className="font-semibold tracking-tight text-lg">
-              делов-на-час
             </Link>
+          </nav>
+
+          {/* центр */}
+          <div className="text-base font-semibold tracking-wide lowercase">
+            делов-на-час
           </div>
 
-          {/* справа — Вызвать мастера на отдельную страницу /order */}
-          <div className="flex justify-end">
+          {/* справа */}
+          <div className="flex items-center gap-2">
             <Link
               href="/order"
-              className="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md hover:opacity-90 active:scale-95 transition"
+              className="rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-1.5 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition"
             >
               Вызвать мастера
             </Link>
@@ -43,150 +44,130 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ГЕРО-СЕКЦИЯ (минималистично, центрировано) */}
-      <section className="mx-auto max-w-2xl px-4 py-10 text-center">
-        <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-          Мастер на час и отделочные работы в Калуге
-        </h1>
+      {/* Герой + краткое описание */}
+      <section className="bg-gradient-to-b from-zinc-950 to-zinc-900">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-12">
+          <div className="space-y-5">
+            <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+              Мастер на час и отделочные работы в Калуге
+            </h1>
+            <p className="text-zinc-300">
+              Фикс-цены, быстрые заявки, подписки. Живой трекинг мастера — как
+              в такси.
+            </p>
 
-        {/* компактные инфо-баннеры, 3–4 шт, с закруглением */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {['Фикс-цена', 'Быстрый выезд', 'Гарантия', 'Чисто и в срок'].map((t) => (
+            {/* Ровная линия индикаторов */}
+            <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-zinc-300">
+              {["Фикс-цена до выезда", "Приоритет по подписке", "Оплата на месте"].map(
+                (label) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500/60"></span>
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                    </span>
+                    {label}
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Кнопки в одну линию */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link
+                href="/order"
+                className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-2 text-white shadow-md hover:shadow-lg active:scale-95 transition"
+              >
+                Рассчитать и вызвать
+              </Link>
+              <Link
+                href="#subscription"
+                className="rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-2 hover:bg-zinc-800 transition"
+              >
+                Оформить подписку
+              </Link>
+            </div>
+          </div>
+
+          {/* Превью трекинга + сетка карточек */}
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              {/* ЖИВАЯ карта */}
+              <MapWithMasters height="360px" />
+
+              {/* Статусы под картой */}
+              <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                  <div className="text-xs text-zinc-400">Статус</div>
+                  <div className="font-semibold">Поиск мастера</div>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                  <div className="text-xs text-zinc-400">ETA</div>
+                  <div className="font-semibold">3–5 мин</div>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                  <div className="text-xs text-zinc-400">Мастер</div>
+                  <div className="font-semibold">Саша · Илья · Антон</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Услуги (якорь для кнопки в шапке) */}
+      <section id="services" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <h2 className="mb-4 text-2xl font-bold">Популярные услуги</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { t: "Электрика", d: "Розетки, выключатели, светильники" },
+            { t: "Сантехника", d: "Смесители, унитазы, протечки" },
+            { t: "Сборка/мелкий ремонт", d: "Мебель, полки, карнизы" },
+          ].map((c) => (
             <div
-              key={t}
-              className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-sm shadow-sm"
+              key={c.t}
+              className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 transition hover:shadow-lg"
             >
-              {t}
+              <div className="font-semibold">{c.t}</div>
+              <div className="mt-1 text-sm text-zinc-300">{c.d}</div>
+              <Link
+                href="/order"
+                className="mt-4 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-white shadow hover:shadow-lg active:scale-95 transition"
+              >
+                Рассчитать
+              </Link>
             </div>
           ))}
-        </div>
-
-        {/* зелёные индикаторы в одну линию, оставляем только нужные */}
-        <div className="mt-6 flex items-center justify-center gap-6 text-sm text-zinc-300">
-          {['Фикс-цена до выезда', 'Приоритет по подписке', 'Оплата на месте'].map(
-            (label) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="relative inline-flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-30 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
-                </span>
-                {label}
-              </div>
-            ),
-          )}
-        </div>
-
-        {/* Кнопки в одну линию */}
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <Link
-            href="/order"
-            className="inline-flex items-center rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-3 font-medium text-white shadow-lg hover:opacity-90 active:scale-95 transition"
-          >
-            Рассчитать и вызвать
-          </Link>
-          <a
-            href="#subscription"
-            className="inline-flex items-center rounded-2xl bg-zinc-800 px-5 py-3 font-medium text-zinc-100 shadow-inner hover:bg-zinc-700 active:scale-95 transition"
-          >
-            Оформить подписку
-          </a>
-        </div>
-      </section>
-
-      {/* Превью трекинга мастера — теперь реальная карта */}
-      <section id="live-map" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-10">
-        <div className="grid lg:grid-cols-2 gap-6 items-start">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-3">
-            <MapWithMasters height="360px" />
-          </div>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="rounded-xl bg-zinc-800/60 p-3">
-                <div className="text-xs text-zinc-400">Статус</div>
-                <div className="font-semibold">Поиск мастера</div>
-              </div>
-              <div className="rounded-xl bg-zinc-800/60 p-3">
-                <div className="text-xs text-zinc-400">ETA</div>
-                <div className="font-semibold">3–5 мин</div>
-              </div>
-              <div className="rounded-xl bg-zinc-800/60 p-3">
-                <div className="text-xs text-zinc-400">Мастер</div>
-                <NameTicker />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Услуги */}
-      <section id="services" className="py-12 border-t border-zinc-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold mb-6">Популярные услуги</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { t: 'Электрика', d: 'Розетки, выключатели, светильники, автоматы' },
-              { t: 'Сантехника', d: 'Смесители, унитазы, протечки, подключение техники' },
-              { t: 'Сборка и мелкий ремонт', d: 'Мебель, полки, карнизы, ручки' },
-              { t: 'Отделка', d: 'Шпаклёвка, штукатурка, покраска, швы' },
-              { t: 'Монтаж/демонтаж', d: 'Перегородки, двери, проёмы' },
-              { t: 'Диагностика', d: 'Электрика/сантехника, замеры' },
-            ].map((c) => (
-              <div
-                key={c.t}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 hover:border-zinc-700 transition"
-              >
-                <div className="font-semibold">{c.t}</div>
-                <div className="mt-1 text-sm text-zinc-400">{c.d}</div>
-                <Link
-                  href="/order"
-                  className="mt-4 inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-sm text-white shadow hover:opacity-90 active:scale-95 transition"
-                >
-                  Рассчитать
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
       {/* Подписка */}
-      <section id="subscription" className="py-12 border-t border-zinc-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold mb-6">Подписка</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { t: 'Базовая', d: 'Приоритетный выезд, скидка на работы' },
-              { t: 'Стандарт', d: 'Расширенный перечень, расходники' },
-              { t: 'Премиум', d: 'Максимум включений, SLA по времени' },
-            ].map((p) => (
-              <div key={p.t} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
-                <div className="font-semibold">{p.t}</div>
-                <div className="mt-1 text-sm text-zinc-400">{p.d}</div>
-                <div className="mt-4 flex gap-2">
-                  <a className="inline-flex rounded-xl bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700 transition">
-                    Подробнее
-                  </a>
-                  <Link
-                    href="/order"
-                    className="inline-flex rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-sm text-white shadow hover:opacity-90 active:scale-95 transition"
-                  >
-                    Оставить заявку
-                  </Link>
-                </div>
+      <section id="subscription" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <h2 className="mb-4 text-2xl font-bold">Подписка</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {["Базовая", "Стандарт", "Премиум"].map((title) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+            >
+              <div className="font-semibold">{title}</div>
+              <div className="mt-1 text-sm text-zinc-300">
+                Приоритет, скидки и расширенные включения.
               </div>
-            ))}
-          </div>
+              <div className="mt-4 flex gap-3">
+                <button className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 hover:bg-zinc-800 transition">
+                  Подробнее
+                </button>
+                <Link
+                  href="/order"
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-white shadow hover:shadow-lg active:scale-95 transition"
+                >
+                  Оставить заявку
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
-  );
-}
-
-/** Простая «карусель» имён мастеров */
-function NameTicker() {
-  const names = ['Саша · ★4.9', 'Олег · ★4.8', 'Игорь · ★4.7', 'Максим · ★5.0'];
-  return (
-    <span className="inline-block animate-pulse">{names[new Date().getSeconds() % names.length]}</span>
   );
 }
