@@ -4,9 +4,11 @@ import dynamic from "next/dynamic";
 export const revalidate = 0;
 
 // карта мастеров (динамический импорт без SSR)
-const MapWithMasters = dynamic(() => import("@/components/map/MapWithMasters"), {
-  ssr: false,
-});
+// ВАЖНО: относительный путь, без alias "@"
+const MapWithMasters = dynamic(
+  () => import("./components/map/MapWithMasters"),
+  { ssr: false }
+);
 
 export default function LandingPage() {
   return (
@@ -208,7 +210,6 @@ export default function LandingPage() {
             Опишите задачу — заявка прилетит в наш Telegram-чат.
           </p>
 
-          {/* ЕДИНСТВЕННАЯ форма (без вложенности) */}
           <form
             method="post"
             action="/api/order"
@@ -220,7 +221,6 @@ export default function LandingPage() {
             <input name="address" placeholder="Адрес (необязательно)" className="rounded-xl border px-3 py-2" />
             <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2" />
 
-            {/* Красивая кнопка для медиа */}
             <div className="grid gap-2">
               <input id="media" name="media" type="file" multiple accept="image/*,video/*" className="hidden" />
               <label
