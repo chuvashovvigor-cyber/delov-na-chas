@@ -25,14 +25,9 @@ const blackPin = new L.Icon({
   shadowSize: [41, 41],
 });
 
-export default function MapWithMasters({
-  height = '420px',
-}: {
-  height?: string;
-}) {
+export default function MapWithMasters({ height = '420px' }: { height?: string }) {
   const [masters, setMasters] = useState<MasterPoint[] | null>(null);
 
-  // Пуллинг раз в 5 сек
   useEffect(() => {
     let cancelled = false;
 
@@ -55,8 +50,7 @@ export default function MapWithMasters({
 
   const bounds = useMemo(() => {
     if (!masters || masters.length === 0) return null;
-    const b = L.latLngBounds(masters.map((m) => [m.lat, m.lon] as [number, number]));
-    return b;
+    return L.latLngBounds(masters.map((m) => [m.lat, m.lon] as [number, number]));
   }, [masters]);
 
   return (
@@ -71,17 +65,12 @@ export default function MapWithMasters({
         boundsOptions={{ padding: [40, 40] }}
       >
         <TileLayer
-          // более «живой» стиль карт
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; OpenStreetMap &copy; CARTO'
+          attribution="&copy; OpenStreetMap &copy; CARTO"
         />
 
         {(masters ?? []).map((m) => (
-          <Marker
-            key={m.id}
-            position={[m.lat, m.lon]}
-            icon={blackPin}
-          >
+          <Marker key={m.id} position={[m.lat, m.lon]} icon={blackPin}>
             <Popup>
               <div className="text-sm">
                 <div className="font-semibold">Мастер {m.id}</div>
