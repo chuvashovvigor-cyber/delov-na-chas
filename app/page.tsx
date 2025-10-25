@@ -54,6 +54,18 @@ export default function LandingPage() {
               Мастер на час и отделочные работы в Калуге
             </h1>
 
+            {/* ИНФО-БАННЕРЫ (прямоугольники с закруглениями) */}
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {['Гарантия работ', 'Фикс-цены', 'Выезд сегодня', 'Юр/физ лицам'].map((b) => (
+                <div
+                  key={b}
+                  className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-4 py-3 text-center text-sm shadow-sm"
+                >
+                  {b}
+                </div>
+              ))}
+            </div>
+
             {/* зелёные индикаторы в одну линию */}
             <div className="mt-5 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-600 dark:text-zinc-300">
               {['Фикс-цена до выезда', 'Приоритет по подписке', 'Оплата на месте'].map(
@@ -89,7 +101,6 @@ export default function LandingPage() {
           {/* превью карточка с мини-картой */}
           <div className="relative">
             <div className="rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-              {/* тут была заглушка — теперь настоящая мини-карта */}
               <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl">
                 <MapWithMasters height="100%" />
               </div>
@@ -115,7 +126,153 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* НОВАЯ СЕКЦИЯ: ЖИВАЯ КАРТА МАСТЕРОВ */}
+      {/* Нам доверяют */}
+      <section className="py-8 border-y bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-zinc-400">
+            Нам доверяют
+          </div>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {['ВТБ', 'El Coffee', 'Bla-Bla bar', 'ДК «Арбат»'].map((name) => (
+              <div
+                key={name}
+                className="h-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 grid place-items-center text-gray-600 dark:text-zinc-300 shadow-sm"
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Как это работает */}
+      <section id="how" className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold">Как это работает</h2>
+          <div className="mt-6 grid sm:grid-cols-3 gap-4">
+            {[
+              { t: 'Описываете задачу', d: 'Заполняете форму, прикрепляете фото/видео' },
+              { t: 'Получаете цену', d: 'Менеджер подтверждает фикс-стоимость' },
+              { t: 'Следите на карте', d: 'Мастер едет к вам, виден ETA и статус' },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-5 shadow-sm"
+              >
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white grid place-items-center font-semibold">
+                  {i + 1}
+                </div>
+                <div className="mt-3 font-semibold">{s.t}</div>
+                <div className="mt-1 text-gray-600 dark:text-zinc-300 text-sm">{s.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Популярные услуги */}
+      <section id="services" className="py-12 bg-white dark:bg-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold">Популярные услуги</h2>
+          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { t: 'Электрика', d: 'Розетки, выключатели, светильники, автоматы' },
+              { t: 'Сантехника', d: 'Смесители, унитазы, протечки, подключение техники' },
+              { t: 'Сборка и мелкий ремонт', d: 'Мебель, полки, карнизы, дверные ручки' },
+              { t: 'Отделка', d: 'Шпаклёвка, штукатурка, покраска, армирование сеткой' },
+              { t: 'Монтаж/демонтаж', d: 'Возведение/ломка стен, проёмы, двери' },
+              { t: 'Диагностика', d: 'Электрика/сантехника, замеры, скрытые коммуникации' },
+            ].map((c, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border p-5 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:shadow-md transition"
+              >
+                <div className="font-semibold">{c.t}</div>
+                <div className="mt-1 text-sm text-gray-600 dark:text-zinc-300">{c.d}</div>
+                <a
+                  href="#order"
+                  className="mt-4 inline-flex text-sm rounded-xl px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-lg active:scale-[.98] transition"
+                >
+                  Рассчитать
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Подписки */}
+      <section id="subscription" className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold">Подписка для физ и юр лиц</h2>
+          <div className="mt-6 grid md:grid-cols-3 gap-4">
+            {[
+              { t: 'Базовая', d: 'Приоритетный выезд, скидка на работы' },
+              { t: 'Стандарт', d: 'Расширенный перечень, базовые расходники' },
+              { t: 'Премиум', d: 'Максимум включений, SLA по времени' },
+            ].map((p, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-5 shadow-sm"
+              >
+                <div className="font-semibold">{p.t}</div>
+                <div className="mt-1 text-sm text-gray-600 dark:text-zinc-300">{p.d}</div>
+                <div className="mt-4 flex gap-2">
+                  <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow hover:shadow-lg active:scale-[.98] transition">
+                    Оставить заявку
+                  </button>
+                  <button className="px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 shadow-sm active:scale-[.98] transition">
+                    Подробнее
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ФОРМА ЗАЯВКИ */}
+      <section id="order" className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-center">Готовы помочь сегодня</h2>
+          <p className="mt-2 text-gray-600 dark:text-zinc-300 text-center">
+            Опишите задачу — заявка прилетит в наш Telegram-чат.
+          </p>
+
+          <form
+            method="post"
+            action="/api/order"
+            encType="multipart/form-data"
+            className="mx-auto mt-8 max-w-xl grid gap-3"
+          >
+            <input name="name" required placeholder="Ваше имя" className="rounded-xl border px-3 py-2 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800" />
+            <input name="phone" required placeholder="Телефон" className="rounded-xl border px-3 py-2 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800" />
+            <input name="address" placeholder="Адрес (необязательно)" className="rounded-xl border px-3 py-2 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800" />
+            <textarea name="details" required placeholder="Опишите задачу" rows={4} className="rounded-xl border px-3 py-2 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800" />
+
+            <div className="grid gap-2">
+              <input id="media" name="media" type="file" multiple accept="image/*,video/*" className="hidden" />
+              <label
+                htmlFor="media"
+                className="cursor-pointer rounded-2xl border border-dashed bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 px-4 py-3 text-center hover:bg-gray-50 dark:hover:bg-zinc-800"
+              >
+                <div className="text-sm font-medium">Прикрепить фото/видео</div>
+                <div className="text-xs text-gray-500 dark:text-zinc-400">Можно несколько файлов • до ~20 МБ каждый</div>
+              </label>
+            </div>
+
+            <button className="rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 shadow hover:shadow-lg active:scale-[.98] transition">
+              Отправить заявку
+            </button>
+
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              Отправляя заявку, вы соглашаетесь с условиями обработки персональных данных.
+            </p>
+          </form>
+        </div>
+      </section>
+
+      {/* ЖИВАЯ КАРТА МАСТЕРОВ (блок снизу тоже оставляю) */}
       <section id="live-map" className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold mb-4">Мастера рядом</h2>
@@ -125,7 +282,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* НИЖЕ оставь свои секции услуг/кейсов/подписок/формы как было */}
+      {/* Футер */}
+      <footer id="contacts" className="border-t bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 grid md:grid-cols-3 gap-6 text-sm">
+          <div>
+            <div className="font-semibold">Контакты</div>
+            <div className="mt-2 text-gray-600 dark:text-zinc-300">
+              +7 (xxx) xxx-xx-xx<br />info@example.ru
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold">Реквизиты</div>
+            <div className="mt-2 text-gray-600 dark:text-zinc-300">
+              ИП Чувашов Геннадий Валентинович<br />
+              ИНН 402900754277 · ОГРНИП 325400000013867<br />
+              Калужская обл., г. Калуга
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold">Документы</div>
+            <div className="mt-2 text-gray-600 dark:text-zinc-300">
+              Публичная оферта · Политика · Согласие на ПДн
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
