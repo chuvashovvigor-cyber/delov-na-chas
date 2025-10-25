@@ -1,89 +1,61 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
-import {MapContainer, TileLayer, Marker, Popup} from 'react-leaflet';
+import { useMemo } from 'react';
+import useSWR from 'swr';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-type Master = { id: string; lat: number; lon: number };
+// Центр по умолчанию — КАЛУГА
+const KALUGA_CENTER: [number, number] = [54.513845, 36.261215];
+
+// Иконка мастера (положи свой файл в /public/icons/master.svg или .png)
+const masterIcon = L.icon({
+  iconUrl: '/icons/master.svg', // можно заменить на .png
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -30],
+});
 
 type Props = {
-  height?: string;   // например "420px"
-  zoom?: number;     // по умолчанию 12
+  height?: string;
+  center?: [number, number];
+  zoom?: number;
 };
 
-// Калуга по умолчанию
-const KALUGA: [number, number] = [54.514, 36.255];
+const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((r) => r.json());
 
-export default function MapWithMasters({ height = '420px', zoom = 12 }: Props) {
-  const [masters, setMasters] = useState<Master[]>([]);
-  const [center] = useState<[number, number]>(KALUGA);
+export default function MapWithMasters({
+  height = '420px',
+  center = KALUGA_CENTER,
+  zoom = 13,
+}: Props) {
+  const { data } = useSWR('/api/masters/all', fetcher, { refreshInterval: 5000 });
 
-  // Чёрная метка-мастер (можешь заменить url на свою SVG/PNG иконку)
-  const masterIcon = useMemo(
-    () =>
-      L.icon({
-        iconUrl:
-          'data:image/svg+xml;utf8,' +
-          encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-               <circle cx="18" cy="18" r="10" fill="black"/>
-               <circle cx="18" cy="18" r="3" fill="white"/>
-             </svg>`
-          ),
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -18],
-      }),
-    []
-  );
-
-  // Поллинг раз в 5 сек
-  useEffect(() => {
-    let stop = false;
-    let timer: number | undefined;
-
-    const load = async () => {
-      try {
-        const res = await fetch('/api/masters/all', { cache: 'no-store' });
-        if (!res.ok) throw new Error('Bad response');
-        const data: Master[] = await res.json();
-        if (!stop) setMasters(Array.isArray(data) ? data : []);
-      } catch {
-        // молча игнорируем
-      } finally {
-        if (!stop) timer = window.setTimeout(load, 5000);
-      }
-    };
-
-    load();
-    return () => {
-      stop = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, []);
+  const masters =
+    (data?.items as Array<{ id: string; lat: number; lon: number; status?: string }>) ?? [];
 
   return (
-    <div className="rounded-2xl border overflow-hidden">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom
-        style={{ height }}
-        className="w-full"
-      >
-        <TileLayer
-          // светлая и читабельная тема + номера домов
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap & CARTO"
-        />
-
-        {masters.map((m) => (
-          <Marker key={m.id} position={[m.lat, m.lon]} icon={masterIcon}>
-            <Popup>Мастер {m.id}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+    <div className="w-full overflow-hidden rounded-2xl border bg-white">
+      <div style={{ height }}>
+        <MapContainer
+          center={center}
+          zoom={zoom}
+          style={{ height: '100%', width: '100%' }}
+          scrollWheelZoom
+        >
+          <TileLayer
+            // более «цветная» подложка
+            url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap, &copy; CARTO"
+          />
+          {masters.map((m) => (
+            <Marker key={m.id} position={[m.lat, m.lon]} icon={masterIcon}>
+              <Popup>Мастер {m.id}</Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
   );
 }
