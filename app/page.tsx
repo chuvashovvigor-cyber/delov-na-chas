@@ -15,7 +15,7 @@ export default function Page() {
       {/* ... */}
     </main>
   );
-}
+
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
