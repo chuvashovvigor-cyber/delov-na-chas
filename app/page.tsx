@@ -1,6 +1,24 @@
 // app/page.tsx
+import Hero from "./components/Hero";
+
+export const revalidate = 0;
+
+export default function Page() {
+  return (
+    <main className="min-h-screen">
+      {/* HERO 16:9 с градиентом и персонажем */}
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <Hero />
+      </div>
+
+      {/* дальше идёт твой контент страницы */}
+      {/* ... */}
+    </main>
+  );
+}
 import Link from "next/link";
 import dynamic from "next/dynamic";
+
 
 export const revalidate = 0;
 
