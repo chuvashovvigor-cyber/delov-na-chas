@@ -6,7 +6,7 @@ const Box = (): JSX.Element => {
       <img
         className="absolute w-full h-full top-0 left-0 object-cover"
         alt="Delov-na-chas"
-        src="/landing.svg" // ← то имя, которое ты дал файлу
+        src="/landing.svg" // <-- имя файла в public (например landing.svg)
       />
     </div>
   );
