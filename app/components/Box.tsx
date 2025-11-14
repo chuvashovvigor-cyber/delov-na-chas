@@ -4,7 +4,7 @@ import React from "react";
 const Box = (): JSX.Element => {
   return (
     <img
-      src="/landing.svg" // <-- здесь ИМЯ файла в public (например /2025-4-51-33-GMT-3.svg)
+      src="/landing.svg" // <-- здесь ТОЧНОЕ имя файла из public
       alt="Delov-na-chas мобильный экран"
       className="block w-full max-w-[390px] h-auto mx-auto"
     />
