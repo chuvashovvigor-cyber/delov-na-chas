@@ -2,18 +2,17 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Hero from "./components/Hero";
-import Box from "../components/Box"; // ← было "@/components/Box"
+import Box from "../components/Box"; // относительный импорт
 
 export const revalidate = 0;
 
 // карта мастеров (динамический импорт без SSR)
 const MapWithMasters = dynamic(
-  () => import("../components/map/MapWithMasters"), // ← было "@/components/map/MapWithMasters"
+  () => import("../components/map/MapWithMasters"),
   {
     ssr: false,
   }
 );
-
 
 export default function LandingPage() {
   return (
@@ -53,17 +52,19 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ─────────────────────────── HERO ─────────────────────────── */}
+      {/* ─────────────────────────── HERO + макет ──────────────────── */}
       <main>
-        {/* 🔥 Новый блок: макет из Figma как картинка */}
-        <section className="flex justify-center bg-black py-6">
+        {/* 🔹 Мобильная версия — показываем макет из Figma */}
+        <section className="py-6 sm:hidden">
           <Box />
         </section>
 
-        {/* дальше идёт твой старый контент как был */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-          <Hero />
-        </div>
+        {/* 🔹 Планшет/десктоп — показываем старый Hero */}
+        <section className="hidden sm:block">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <Hero />
+          </div>
+        </section>
 
         {/* ───────────────────── Наши преимущества ─────────────────── */}
         <section className="py-8">
@@ -93,7 +94,6 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-xl font-semibold mb-4">Мастера рядом</h2>
 
-            {/* Внутри MapWithMasters сама карта Leaflet; даём ей высоту */}
             <div className="rounded-2xl border bg-white p-3">
               <MapWithMasters height="420px" />
             </div>
@@ -155,7 +155,7 @@ export default function LandingPage() {
             <h2 className="text-xl font-semibold text-center">
               Готовы помочь сегодня
             </h2>
-            <p className="mt-2 text-gray-600 text-center">
+          <p className="mt-2 text-gray-600 text-center">
               Опишите задачу — заявка прилетит в наш Telegram-чат.
             </p>
 
