@@ -6,7 +6,7 @@ import Box from "../components/Box";
 
 export const revalidate = 0;
 
-// карта мастеров (динамический импорт без SSR)
+// карта мастеров (динамический импорт ыбез SSR)
 const MapWithMasters = dynamic(
   () => import("../components/map/MapWithMasters"),
   {
