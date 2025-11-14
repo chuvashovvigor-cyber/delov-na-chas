@@ -16,58 +16,58 @@ const MapWithMasters = dynamic(
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* ─────────────────────────── ШАПКА ─────────────────────────── */}
-      <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto max-w-7xl h-14 px-3 sm:px-4 lg:px-8 relative">
-          {/* левая кнопка (Услуги) */}
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 sm:left-4">
-            <Link
-              href="#services"
-              className="h-9 px-3 inline-flex items-center justify-center rounded-xl text-sm
-                         bg-white text-gray-900 border shadow-sm hover:bg-gray-100 active:scale-[0.98] transition"
-            >
-              Услуги
-            </Link>
+    <div className="min-h-screen bg-black">
+      {/* 🔹 МОБИЛЬНАЯ ВЕРСИЯ — ТОЛЬКО КАРТИНКА ИЗ FIGMA */}
+      <div className="sm:hidden">
+        <Box />
+      </div>
+
+      {/* 🔹 ПЛАНШЕТ/ДЕСКТОП — СТАРЫЙ ЛЕНДИНГ */}
+      <div className="hidden sm:block bg-gray-50 text-gray-900">
+        {/* ─────────────────────────── ШАПКА ─────────────────────────── */}
+        <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur">
+          <div className="mx-auto max-w-7xl h-14 px-3 sm:px-4 lg:px-8 relative">
+            {/* левая кнопка (Услуги) */}
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 sm:left-4">
+              <Link
+                href="#services"
+                className="h-9 px-3 inline-flex items-center justify-center rounded-xl text-sm
+                           bg-white text-gray-900 border shadow-sm hover:bg-gray-100 active:scale-[0.98] transition"
+              >
+                Услуги
+              </Link>
+            </div>
+
+            {/* центр — бренд */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <span className="font-semibold tracking-tight lowercase select-none">
+                делов-на-час
+              </span>
+            </div>
+
+            {/* правая кнопка (Вызвать мастера) */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 sm:right-4">
+              <Link
+                href="/order"
+                className="h-9 px-3 inline-flex items-center justify-center rounded-xl text-sm text-white
+                           bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600
+                           shadow-md active:scale-[0.98] transition"
+              >
+                Вызвать мастера
+              </Link>
+            </div>
           </div>
+        </header>
 
-          {/* центр — бренд */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <span className="font-semibold tracking-tight lowercase select-none">
-              делов-на-час
-            </span>
-          </div>
-
-          {/* правая кнопка (Вызвать мастера) */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 sm:right-4">
-            <Link
-              href="/order"
-              className="h-9 px-3 inline-flex items-center justify-center rounded-xl text-sm text-white
-                         bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600
-                         shadow-md active:scale-[0.98] transition"
-            >
-              Вызвать мастера
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        {/* 🔹 МОБИЛКА: показываем ТОЛЬКО макет из Фигмы */}
-        <section className="py-0 sm:hidden">
-          <Box />
-        </section>
-
-        {/* 🔹 ПЛАНШЕТ/ДЕСKTOP: показываем старый лендинг */}
-        <div className="hidden sm:block">
-          {/* HERO */}
+        {/* ─────────────────────────── HERO ─────────────────────────── */}
+        <main>
           <section>
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
               <Hero />
             </div>
           </section>
 
-          {/* Наши преимущества */}
+          {/* ───────────────────── Наши преимущества ─────────────────── */}
           <section className="py-8">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-xl font-semibold mb-4">Наши преимущества</h2>
@@ -90,7 +90,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Живая карта мастеров */}
+          {/* ───────────────────── Живая карта мастеров ──────────────── */}
           <section id="live-map" className="py-10">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-xl font-semibold mb-4">Мастера рядом</h2>
@@ -116,7 +116,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Популярные услуги */}
+          {/* ───────────────────── Популярные услуги ─────────────────── */}
           <section id="services" className="py-10 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-xl font-semibold">Популярные услуги</h2>
@@ -150,7 +150,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Форма заявки */}
+          {/* ───────────────────── Форма заявки якорь ────────────────── */}
           <section id="order" className="py-12">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-xl font-semibold text-center">
@@ -227,38 +227,38 @@ export default function LandingPage() {
               </form>
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      {/* ─────────────────────────── ФУТЕР ─────────────────────────── */}
-      <footer id="contacts" className="border-t bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 grid md:grid-cols-3 gap-6 text-sm">
-          <div>
-            <div className="font-semibold">Контакты</div>
-            <div className="mt-2 text-gray-600">
-              +7 (xxx) xxx-xx-xx
-              <br />
-              info@example.ru
+        {/* ─────────────────────────── ФУТЕР ─────────────────────────── */}
+        <footer id="contacts" className="border-t bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 grid md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <div className="font-semibold">Контакты</div>
+              <div className="mt-2 text-gray-600">
+                +7 (xxx) xxx-xx-xx
+                <br />
+                info@example.ru
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold">Реквизиты</div>
+              <div className="mt-2 text-gray-600">
+                ИП Чувашов Геннадий Валентинович
+                <br />
+                ИНН 402900754277 · ОГРНИП 325400000013867
+                <br />
+                Калужская обл., г. Калуга
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold">Документы</div>
+              <div className="mt-2 text-gray-600">
+                Публичная оферта · Политика · Согласие на ПДн
+              </div>
             </div>
           </div>
-          <div>
-            <div className="font-semibold">Реквизиты</div>
-            <div className="mt-2 text-gray-600">
-              ИП Чувашов Геннадий Валентинович
-              <br />
-              ИНН 402900754277 · ОГРНИП 325400000013867
-              <br />
-              Калужская обл., г. Калуга
-            </div>
-          </div>
-          <div>
-            <div className="font-semibold">Документы</div>
-            <div className="mt-2 text-gray-600">
-              Публичная оферта · Политика · Согласие на ПДн
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
