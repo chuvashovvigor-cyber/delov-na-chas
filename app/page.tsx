@@ -2,14 +2,18 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Hero from "./components/Hero";
-import Box from "@/components/Box"; // ✅ добавили
+import Box from "../components/Box"; // ← было "@/components/Box"
 
 export const revalidate = 0;
 
 // карта мастеров (динамический импорт без SSR)
-const MapWithMasters = dynamic(() => import("@/components/map/MapWithMasters"), {
-  ssr: false,
-});
+const MapWithMasters = dynamic(
+  () => import("../components/map/MapWithMasters"), // ← было "@/components/map/MapWithMasters"
+  {
+    ssr: false,
+  }
+);
+
 
 export default function LandingPage() {
   return (
